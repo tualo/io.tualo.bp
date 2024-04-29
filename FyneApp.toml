@@ -1,0 +1,8 @@
+Website = "https://tualo.de"
+
+[Details]
+  Icon = "images/Icon.png"
+  Name = "Scanner"
+  ID = "io.tualo.bp"
+  Version = "1.0.0"
+  Build = 5

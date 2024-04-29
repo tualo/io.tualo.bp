@@ -1,0 +1,460 @@
+package grab
+
+import (
+	"log"
+	"gocv.io/x/gocv"
+	"image"
+	"image/color"
+	"time"
+	"github.com/bieber/barcode"
+	"fmt"
+	api "io.tualo.bp/api"
+	"strings"
+	"encoding/json"
+	"encoding/base64"
+	structs "io.tualo.bp/structs"
+)
+
+
+
+func (this *GrabcameraClass) findBarcodes(scanner *barcode.ImageScanner, img gocv.Mat)[]structs.BarcodeSymbol{
+	syms := []structs.BarcodeSymbol{}
+	if img.Empty() {
+		return syms
+	}
+	barcodeScale := 1
+
+	smaller:=gocv.NewMat()
+	gocv.CvtColor(img, &smaller, gocv.ColorBGRToGray)
+	if smaller.Cols() > 800 {
+		gocv.GaussianBlur(smaller, &smaller, image.Point{5, 5}, 0, 0, gocv.BorderDefault)
+		gocv.Resize(smaller, &smaller, image.Point{smaller.Cols() / barcodeScale, smaller.Rows() / barcodeScale}, 0, 0, gocv.InterpolationArea)
+	}
+	if false {
+		log.Println("barcodeScale",barcodeScale,smaller.Cols())
+	}
+	symbols, err := scanner.ScanMat(&smaller)
+	if err != nil {
+		panic(err)
+	}
+	
+	
+	/*
+	log.Println("findBarcodes",len(symbols))
+	if len(symbols) == 0 {
+		gocv.IMWrite("noBarcode.png",img)
+	}else{
+		gocv.IMWrite("barcode.png",img)
+	
+	}
+	*/
+	
+	
+	for _, s := range symbols {
+		syms = append(syms,structs.BarcodeSymbol{Type:s.Type.Name(),Data:s.Data,Quality:s.Quality,Boundary:s.Boundary})
+		if false {
+			log.Println("BarcodeSymbol",s.Type.Name(),s.Data,s.Quality,s.Boundary)
+		}
+	}
+	smaller.Close()
+	return syms
+}
+
+
+
+func (this *GrabcameraClass) processRegionsOfInterest(tr structs.TesseractReturnType,img gocv.Mat, useRoi int) structs.TesseractReturnType{
+	
+
+						
+	this.pixelScale =  float64(img.Cols()) /  float64(tr.Pagesize.Width)
+	this.pixelScaleY =  float64(img.Rows()) /  float64(tr.Pagesize.Height)
+
+	if this.pixelScale==0 {
+		this.pixelScale=1
+	}
+	if this.pixelScaleY==0 {
+		this.pixelScaleY=1
+	}
+	circleSize := int(float64(tr.CircleSize) * this.pixelScale)
+	minDist :=float64(tr.CircleMinDistance) * this.pixelScale
+
+	if false {
+		log.Println("processRegionsOfInterest",tr.PageRois[useRoi].X, 
+			tr.PageRois[useRoi].Y, tr.PageRois[useRoi].Width, 
+			tr.PageRois[useRoi].Height, tr.PageRois[useRoi].ExcpectedMarks, 
+			tr.PageRois[useRoi].Types[0].Title,
+			"pixelScale",this.pixelScale,
+			"pixelScaleY",this.pixelScaleY,
+			"circleSize",circleSize,
+			"minDist",minDist,
+		)
+	}
+
+	if useRoi<len(tr.PageRois) {
+		pRoiIndex := useRoi
+		// for pRoiIndex := 0; pRoiIndex < len(tr.PageRois); pRoiIndex++ {
+		X := int(float64(tr.PageRois[pRoiIndex].X) * this.pixelScale)
+		Y := int(float64(tr.PageRois[pRoiIndex].Y) * this.pixelScaleY)
+		W := int(float64(tr.PageRois[pRoiIndex].Width) * this.pixelScale)
+		H := int(float64(tr.PageRois[pRoiIndex].Height) * this.pixelScaleY)
+
+		rect:=image.Rect( X, Y, X+W, Y+H)
+		croppedMat := img.Region(rect)
+		
+		if !croppedMat.Empty() {
+			marks:=this.findCircles(croppedMat, circleSize,minDist )
+			tr.Marks=marks
+			if tr.PageRois[pRoiIndex].ExcpectedMarks==len(marks) {
+				tr.IsCorrect=true
+			}
+		}
+		croppedMat.Close()
+	}
+	return tr
+	
+
+}
+
+func (this *GrabcameraClass) processImage(){
+	scanner := barcode.NewScanner()
+	scanner.SetEnabledAll(false)
+	scanner.SetEnabledSymbology(barcode.Code39,true)
+	scanner.SetEnabledSymbology(barcode.Code128,true)
+	log.Println("processImage starting ")
+	tesseractNeeded := true
+	lastTesseractResult := structs.TesseractReturnType{}
+	lastBarcode := "wlekfjwuqezgzw"
+	doFindCircles := false
+	checkMarkList := []structs.CheckMarkList{}
+
+	strCurrentBoxBarcode := ""
+	strCurrentStackBarcode := ""
+	
+	//lastCheckMarkList := []structs.CheckMarkList{}
+
+	green := 0
+	red := 0
+	blue := 0
+	for {
+		if !this.runVideo {
+			break
+		}
+		start:=time.Now()
+		if false {
+			log.Println("processImage ************")
+		}
+		//for range grabVideoCameraTicker.C {	
+		img,ok := <-this.paperChannelImage
+		if ok {
+			if false {
+				log.Println("got image",ok,img.Size(),len(this.paperChannelImage))
+			}
+
+			green = 0
+			red = 0
+			blue = 0
+
+			if !img.Empty() {
+
+
+				/*
+				meanStart := time.Now()
+				img_mean := img.Mean()
+				log.Println("Mean: ",time.Since(meanStart),img_mean.Val1)
+				*/
+
+				contour := findPaperContour(img)
+				if contour.Size() == 0 {
+					contour.Close()
+				}else{
+				
+					approx := gocv.ApproxPolyDP(contour, 0.02*gocv.ArcLength(contour, true), true)
+					
+					if approx.Size() != 4 {
+						if true {
+							log.Println("findPaperContour done %s %v",time.Since(start),approx.Size())
+						}
+						approx.Close()
+						contour.Close()
+					}else{
+						approx.Close()
+
+						cornerPoints := getCornerPoints(contour)
+						topLeftCorner := cornerPoints["topLeftCorner"]
+						bottomRightCorner := cornerPoints["bottomRightCorner"]
+						if false {
+							log.Printf("template: %d %d",  bottomRightCorner.X-topLeftCorner.X, bottomRightCorner.Y-topLeftCorner.Y )
+						}
+
+						paper,invM := extractPaper(img, contour, bottomRightCorner.X-topLeftCorner.X, bottomRightCorner.Y-topLeftCorner.Y, cornerPoints)
+						
+						if paper.Empty() {
+							if true {
+								log.Printf("paper empty")
+							}
+							contour.Close()
+							img.Close()
+							paper.Close()
+							invM.Close()
+							continue
+						}
+						playGround := paper.Clone()
+						
+
+						area := float64(paper.Size()[0]) * float64(paper.Size()[1]) / float64(img.Size()[0]) / float64(img.Size()[1])
+						// log.Println("extractPaper done %s %f",time.Since(start),area)
+						if area > 0.1 {
+							codes := this.findBarcodes(scanner,paper)
+							if false {
+								log.Println("findBarcodes done %s %v",time.Since(start),codes)
+							}
+							if len(codes) > 0 {
+								for _, code := range codes {
+									if code.Type == "CODE-39" {
+										if code.Data[0:3]=="FC4" {
+											if len(this.currentBoxBarcode) == cap(this.currentBoxBarcode) {
+												<-this.currentBoxBarcode
+											}
+											this.currentBoxBarcode <- code.Data
+											strCurrentBoxBarcode = code.Data
+										}
+										if code.Data[0:3]=="FC3" {
+											if len(this.currentStackBarcode) == cap(this.currentStackBarcode) {
+												<-this.currentStackBarcode
+											}
+											this.currentStackBarcode <- code.Data
+											strCurrentStackBarcode = code.Data
+										}
+									}
+									if code.Type == "CODE-128" {
+
+										if code.Data != lastBarcode {
+											lastBarcode = code.Data
+											if len(this.ballotBarcode) == cap(this.ballotBarcode) {
+												<-this.ballotBarcode
+											}
+											this.ballotBarcode <- code.Data
+
+											// log.Println("code",code)
+											tesseractNeeded = true
+											doFindCircles = false
+											checkMarkList = []structs.CheckMarkList{}
+											
+											green = 0
+											red = 0
+											blue = 255
+										}
+
+										if tesseractNeeded {
+											
+											result := this.tesseract(paper)
+											if len(result.PageRois)>0 {
+												tesseractNeeded = false
+												lastTesseractResult = result
+												doFindCircles = true
+												checkMarkList = []structs.CheckMarkList{}
+												//fmt.Println("lastTesseractResult **",lastTesseractResult.Title)
+												green = 255
+												red = 255
+												blue = 255
+
+											}else{
+												green = 100
+												red = 255
+												blue = 100
+												//fmt.Println("tesseract no bp found")
+											}
+											
+										}
+
+										if doFindCircles {
+
+											neededRegions := 0
+											for pRoiIndex := 0; pRoiIndex < len(lastTesseractResult.PageRois); pRoiIndex++ {
+												titles := []string{}
+					
+												for i := 0; i < len(lastTesseractResult.PageRois[pRoiIndex].Types); i++ {
+													titles = append(titles, lastTesseractResult.PageRois[pRoiIndex].Types[i].Title)
+												}
+												foundIndex := IndexOf(titles, lastTesseractResult.Title)
+												if (foundIndex>-1) {
+													neededRegions++
+												}
+											}
+
+
+											for pRoiIndex := 0; pRoiIndex < len(lastTesseractResult.PageRois); pRoiIndex++ {
+												titles := []string{}
+					
+												for i := 0; i < len(lastTesseractResult.PageRois[pRoiIndex].Types); i++ {
+													titles = append(titles, lastTesseractResult.PageRois[pRoiIndex].Types[i].Title)
+												}
+												foundIndex := IndexOf(titles, lastTesseractResult.Title)
+												if (foundIndex>-1) {
+
+													res := this.processRegionsOfInterest(lastTesseractResult,paper,pRoiIndex)
+
+													if false {
+														log.Println("res.Marks",res.Marks,pRoiIndex,foundIndex)
+													}
+													//	log.Println("res.Id",lastTesseractResult.PageRois[pRoiIndex].Types[foundIndex].Id)
+													green = 255
+													red = 0
+													blue = 255
+
+
+													if res.IsCorrect {
+														// log.Println("IsCorrect",res)
+														// lastTesseractResult=res
+
+														
+														for i := 0; i < len(res.Marks); i++ {
+															if i >= len(checkMarkList) {
+
+																offestX := int(float64(lastTesseractResult.PageRois[pRoiIndex].X) * this.pixelScale)	
+																offestY := int(float64(lastTesseractResult.PageRois[pRoiIndex].Y) * this.pixelScaleY)
+
+																checkMarkList = append(checkMarkList, structs.CheckMarkList{
+																	Point: image.Point{
+																		offestX + res.Marks[i].X, 
+																		offestY + res.Marks[i].Y,
+																	},
+																	Pixelsize: res.Marks[i].Radius,
+																})
+															}
+															if res.Marks[i].Checked {
+																checkMarkList[i].Sum += 1
+															}
+															checkMarkList[i].Count++
+															checkMarkList[i].AVG = float64(checkMarkList[i].Sum) / float64(checkMarkList[i].Count)
+															checkMarkList[i].Checked = checkMarkList[i].AVG > this.globals.SumMarksAVG
+														}
+
+														if len(checkMarkList)>0 && checkMarkList[0].Count>6 {
+															//
+
+															outList:=[]string{}
+															for i := 0; i < len(checkMarkList); i++ {
+																
+																if checkMarkList[i].Checked {
+																	outList = append(outList, "X")
+																} else {
+																	outList = append(outList, "O")
+																}
+															}	
+															res.Barcode = lastBarcode
+															fmt.Printf("Box: %s, Stack: %s, Barcode: %s, Title: %s, List: %v \n",res.BoxBarcode,res.StackBarcode, res.Barcode , lastTesseractResult.Title, outList)
+															//checkMarkList = sumMarks(checkMarkList, res)
+															//lastCheckMarkList = checkMarkList
+															b := new(strings.Builder)
+															json.NewEncoder(b).Encode(outList)
+
+
+															
+
+															image_bytes, _ := gocv.IMEncode(gocv.JPEGFileExt, paper)
+															image_base64 := base64.StdEncoding.EncodeToString(image_bytes.GetBytes())
+															//fmt.Println("pic",image_base64[0:100])
+															image_bytes.Close()
+
+															res,err := api.SendReading(
+																strCurrentBoxBarcode,
+																strCurrentStackBarcode,
+																res.Barcode,
+																lastTesseractResult.PageRois[pRoiIndex].Types[foundIndex].Id,
+																b.String(),
+																"data:image/jpeg;base64,"+image_base64,
+															)
+															
+															if err != nil {
+																log.Println("SendReading ERROR",err)
+																green = 0
+																red = 255
+																blue = 0
+															}else{
+																// log.Println(">>>>",res.Msg)
+																if res.Success {
+																	doFindCircles = false
+
+
+																	green = 150
+																	red = 0
+																	blue = 50
+																}else{
+																	log.Println("SendReading ERROR",res.Msg)
+																}
+															}
+
+														}
+													}else{
+														// log.Println("IsCorrect NO!")
+													}
+												}
+											}
+										}else{
+											green = 50
+											red = 0
+											blue = 250
+										}
+										//log.Println("code use tesseract",code.Data,tesseractNeeded,lastTesseractResult)
+									}
+								}
+								// gocv.IMWrite("paper.png",paper)
+							}
+
+						}else{
+							green = 0
+							red = 0
+							blue = 0
+						}
+
+										
+
+
+						
+						// gocv.Line(&xp, image.Point{0,0}, image.Point{200,img.Rows()},color.RGBA{0,0,255,0}, 20)
+
+						if !doFindCircles && !tesseractNeeded && !paper.Empty() && (red + green + blue > 0) {
+							gocv.CvtColor(img, &img, gocv.ColorBGRToBGRA)
+							for i := 0; i < len(checkMarkList); i++ {
+								//playGround
+								if checkMarkList[i].Checked {
+									gocv.Circle(&playGround, checkMarkList[i].Point, checkMarkList[i].Pixelsize, color.RGBA{0, 255, 0, 0}, 20)
+								}else{
+									gocv.Circle(&playGround, checkMarkList[i].Point, checkMarkList[i].Pixelsize, color.RGBA{255, 0, 0, 0}, 20)
+								}
+							}
+
+							gocv.WarpPerspective(playGround, &img, invM, image.Point{img.Cols(), img.Rows()})
+							
+							
+						}
+
+						drawContours := gocv.NewPointsVector()
+						drawContours.Append(contour)
+						gocv.DrawContours(&img, drawContours, -1, color.RGBA{uint8(red), uint8(green), uint8(blue), 120}, int(8.0*this.pixelScale))
+						drawContours.Close()
+
+
+						
+
+
+						invM.Close()
+						paper.Close()
+						playGround.Close()
+						contour.Close()
+					}
+				}
+			}
+			if len(this.imageChannelPaper)==cap(this.imageChannelPaper) {
+				mat,_:=<-this.imageChannelPaper
+				mat.Close()
+			}
+			cloned := img.Clone()
+			this.imageChannelPaper <- cloned
+			img.Close()
+		}
+		//log.Println("processImage done %s",time.Since(start))
+	}
+	//log.Println("processImage exit",runVideo)
+}
