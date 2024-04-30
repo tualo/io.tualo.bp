@@ -347,8 +347,9 @@ func (this *GrabcameraClass) processImage(){
 												for i := 0; i < len(lastTesseractResult.PageRois[pRoiIndex].Types); i++ {
 													titles = append(titles, lastTesseractResult.PageRois[pRoiIndex].Types[i].Title)
 												}
-												foundIndex = IndexOf(titles, lastTesseractResult.Title)
-												if (foundIndex>-1) {
+												fIndex := IndexOf(titles, lastTesseractResult.Title)
+												if (fIndex>-1) {
+													foundIndex = fIndex
 													listOfRoiIndexes = append(listOfRoiIndexes,pRoiIndex)
 												}
 											}
@@ -364,8 +365,8 @@ func (this *GrabcameraClass) processImage(){
 													titles = append(titles, lastTesseractResult.PageRois[pRoiIndex].Types[i].Title)
 												}
 												foundIndex := IndexOf(titles, lastTesseractResult.Title)
-												if (foundIndex>-1) {
 													*/
+													if (foundIndex>-1) {
 
 													res := this.processRegionsOfInterest(lastTesseractResult,paper,listOfRoiIndexes)
 
@@ -470,7 +471,7 @@ func (this *GrabcameraClass) processImage(){
 													}else{
 														// log.Println("IsCorrect NO!")
 													}
-												// }
+												 }
 											}
 										}else{
 											green = 250
