@@ -251,6 +251,10 @@ func (this *GrabcameraClass) processImage(){
 											}
 											this.currentBoxBarcode <- code.Data
 											strCurrentBoxBarcode = code.Data
+
+											tesseractNeeded = true
+											doFindCircles = false
+											checkMarkList = []structs.CheckMarkList{}
 										}
 										if code.Data[0:3]=="FC3" {
 											if len(this.currentStackBarcode) == cap(this.currentStackBarcode) {
@@ -258,6 +262,11 @@ func (this *GrabcameraClass) processImage(){
 											}
 											this.currentStackBarcode <- code.Data
 											strCurrentStackBarcode = code.Data
+
+											tesseractNeeded = true
+											doFindCircles = false
+											checkMarkList = []structs.CheckMarkList{}
+
 										}
 									}
 									if code.Type == "CODE-128" {
