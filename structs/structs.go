@@ -78,7 +78,7 @@ type DocumentConfigurationPageRoi struct {
 	ExcpectedMarks int `json:"excpectedMarks"`
 	Types	[]struct{
 		Title string `json:"title"`
-		Id string `json:"id"`
+		Id int `json:"id"`
 	} `json:"types"`
 	
 }

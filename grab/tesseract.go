@@ -93,15 +93,22 @@ func (this *GrabcameraClass) tesseract(img gocv.Mat) (structs.TesseractReturnTyp
 					gocv.IMWrite("tesseract.png", croppedMat)
 				}
 			}
-			if false {
+			searchFor:=""
+			if true {
 				for j := 0; j < len(out); j++ {
-					fmt.Println(i,j,out[j].Word)
+					searchFor += " " +out[j].Word
 				}
 			}
+			fmt.Println("searchFor",searchFor)
 			for j := 0; j < len(documentConfigurations[i].Titles); j++ {
-				distance := levenshtein.ComputeDistance(out[0].Word, documentConfigurations[i].Titles[j])
-				if false {
-					fmt.Printf("The distance between %s and %s is %d %d.\n", out[0].Word, documentConfigurations[i].Titles[j], len( documentConfigurations[i].Titles[j]), distance)
+				distance := levenshtein.ComputeDistance(searchFor, documentConfigurations[i].Titles[j])
+				if true {
+					fmt.Printf("The distance between: \n*%s* \n*%s* \nis %d %d.\n", 
+					searchFor, 
+					documentConfigurations[i].Titles[j], 
+					len( documentConfigurations[i].Titles[j]), 
+					distance,
+				)
 				}
 				if distance < 3 {
 					result.Title=documentConfigurations[i].Titles[j]

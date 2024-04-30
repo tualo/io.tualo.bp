@@ -75,7 +75,9 @@ func main() {
 				log.Println("GetConfig ERROR",err)
 				return
 			}
-			// log.Println("GetConfig",conf)
+			log.Println("GetConfig",conf)
+			log.Println("GetConfig ROIS",conf[0].Rois)
+			
 			grabber.SetDocumentConfigurations(conf)
 		}
 		

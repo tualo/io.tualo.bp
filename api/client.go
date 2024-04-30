@@ -112,13 +112,14 @@ func GetConfig( ) (structs.DocumentConfigurations, error) {
 	var response structs.DocumentConfigurations
 	sb,err := Get(systemURL+"papervote/opticaldata/config")
 	json.Unmarshal([]byte(sb), &response)
+	//log.Println("GetConfig",response)
 	return response, err
 }
 
 
-func SendReading( boxbarcode string, stackbarcode string, barcode string, id string, marks string,image string) (KandidatenResponse, error) {
+func SendReading( boxbarcode string, stackbarcode string, barcode string, id int, marks string,image string) (KandidatenResponse, error) {
 	var response KandidatenResponse
-	data := "boxbarcode="+boxbarcode+"&stackbarcode="+stackbarcode+"&barcode="+barcode+"&id="+id+"&marks="+marks+"&image="+image
+	data := "boxbarcode="+boxbarcode+"&stackbarcode="+stackbarcode+"&barcode="+barcode+"&id="+fmt.Sprintf("%d", id)+"&marks="+marks+"&image="+image
 	// log.Println("SendReading",data)
 	sb,err := Post(systemURL+"papervote/opticaldata",data)
 	json.Unmarshal([]byte(sb), &response)

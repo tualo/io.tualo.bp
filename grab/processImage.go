@@ -15,8 +15,41 @@ import (
 	structs "io.tualo.bp/structs"
 )
 
+/*
+func NewLuminanceSourceFromImage(img image.Image) LuminanceSource {
 
+func (this *GrabcameraClass) findBarcodes(scanner *barcode.ImageScanner, img gocv.Mat)[]structs.BarcodeSymbol{
 
+	luminance := make([]byte, width*height)
+	for y := 0; y < height; y++ {
+		for x := 0; x < width; x++ {
+			r, g, b, _ := img.At(x, y).RGBA()
+			luminance[y*width+x] = byte((r + g + b) / 3)
+		}
+	}
+
+	&GoImageLuminanceSource{&RGBLuminanceSource{
+		LuminanceSourceBase{width, height},
+		luminance,
+		width,
+		height,
+		0,
+		0,
+	}}
+
+	NewBinaryBitmap(NewHybridBinarizer(src))
+
+	dec := oned.NewCode128Reader()
+    i, err := gozxing.NewBinaryBitmapFromImage(bitmapimg)
+    if err != nil {
+        return content, err
+    }
+    r, err := dec.DecodeWithoutHints(i)
+    if err != nil {
+        return content, err
+    }
+}
+*/
 func (this *GrabcameraClass) findBarcodes(scanner *barcode.ImageScanner, img gocv.Mat)[]structs.BarcodeSymbol{
 	syms := []structs.BarcodeSymbol{}
 	if img.Empty() {
@@ -65,6 +98,7 @@ func (this *GrabcameraClass) findBarcodes(scanner *barcode.ImageScanner, img goc
 func (this *GrabcameraClass) processRegionsOfInterest(tr structs.TesseractReturnType,img gocv.Mat, useRoi int) structs.TesseractReturnType{
 	
 
+	log.Println("processRegionsOfInterest Ratio ",float64(img.Cols()) / float64(img.Rows()),  float64(tr.Pagesize.Width) / float64(tr.Pagesize.Height) )
 						
 	this.pixelScale =  float64(img.Cols()) /  float64(tr.Pagesize.Width)
 	this.pixelScaleY =  float64(img.Rows()) /  float64(tr.Pagesize.Height)
@@ -171,7 +205,7 @@ func (this *GrabcameraClass) processImage(){
 					approx := gocv.ApproxPolyDP(contour, 0.02*gocv.ArcLength(contour, true), true)
 					
 					if approx.Size() != 4 {
-						if true {
+						if false {
 							log.Println("findPaperContour done %s %v",time.Since(start),approx.Size())
 						}
 						approx.Close()
@@ -377,7 +411,7 @@ func (this *GrabcameraClass) processImage(){
 																	doFindCircles = false
 
 
-																	green = 150
+																	green = 250
 																	red = 0
 																	blue = 50
 																}else{
@@ -392,9 +426,9 @@ func (this *GrabcameraClass) processImage(){
 												}
 											}
 										}else{
-											green = 50
+											green = 250
 											red = 0
-											blue = 250
+											blue = 50
 										}
 										//log.Println("code use tesseract",code.Data,tesseractNeeded,lastTesseractResult)
 									}
