@@ -36,7 +36,7 @@ func DrawCircles(img *gocv.Mat, circles *gocv.Mat,  innerOverdraw int, outerOver
 	}
 }
 
-func (this *GrabcameraClass) findCircles(croppedMat gocv.Mat , circleSize int,minDist float64) []structs.CheckMarks {
+func (this *GrabcameraClass) findCircles(croppedMat gocv.Mat , circleSize int,minDist float64,roiIndex int) []structs.CheckMarks {
 	croppedMatGray := gocv.NewMat()
 	gocv.CvtColor(croppedMat, &croppedMatGray, gocv.ColorBGRToGray)
 	circles := gocv.NewMat()
@@ -95,7 +95,7 @@ func (this *GrabcameraClass) findCircles(croppedMat gocv.Mat , circleSize int,mi
 				rect_circleMat := imgRGray.Region(rect_circle)
 				mean := rect_circleMat.Mean()
 				rect_circleMat.Close()
-				checkMarks = append(checkMarks, structs.CheckMarks{mean.Val1, x, y, r,math.Round( mean.Val1 ) < this.globals.MeanFindCircles})
+				checkMarks = append(checkMarks, structs.CheckMarks{mean.Val1, x, y, r,math.Round( mean.Val1 ) < this.globals.MeanFindCircles,roiIndex})
 				log.Println("check  ",i,this.globals.MeanFindCircles,math.Round( mean.Val1 ) < this.globals.MeanFindCircles)
 			}
 		}

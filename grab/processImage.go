@@ -95,7 +95,7 @@ func (this *GrabcameraClass) findBarcodes(scanner *barcode.ImageScanner, img goc
 
 
 
-func (this *GrabcameraClass) processRegionsOfInterest(tr structs.TesseractReturnType,img gocv.Mat, useRoi int) structs.TesseractReturnType{
+func (this *GrabcameraClass) processRegionsOfInterest(tr structs.TesseractReturnType,img gocv.Mat, useRois []int) structs.TesseractReturnType{
 	
 
 	log.Println("processRegionsOfInterest Ratio ",float64(img.Cols()) / float64(img.Rows()),  float64(tr.Pagesize.Width) / float64(tr.Pagesize.Height) )
@@ -112,6 +112,7 @@ func (this *GrabcameraClass) processRegionsOfInterest(tr structs.TesseractReturn
 	circleSize := int(float64(tr.CircleSize) * this.pixelScale)
 	minDist :=float64(tr.CircleMinDistance) * this.pixelScale
 
+	/*
 	if false {
 		log.Println("processRegionsOfInterest",tr.PageRois[useRoi].X, 
 			tr.PageRois[useRoi].Y, tr.PageRois[useRoi].Width, 
@@ -123,27 +124,38 @@ func (this *GrabcameraClass) processRegionsOfInterest(tr structs.TesseractReturn
 			"minDist",minDist,
 		)
 	}
+*/
+	marks:=[]structs.CheckMarks{}
+	for useRoi := 0; useRoi < len(useRois); useRoi++ {
+		if useRoi<len(tr.PageRois) {
+			// for pRoiIndex := 0; pRoiIndex < len(tr.PageRois); pRoiIndex++ {
+			X := int(float64(tr.PageRois[useRois[useRoi]].X) * this.pixelScale)
+			Y := int(float64(tr.PageRois[useRois[useRoi]].Y) * this.pixelScaleY)
+			W := int(float64(tr.PageRois[useRois[useRoi]].Width) * this.pixelScale)
+			H := int(float64(tr.PageRois[useRois[useRoi]].Height) * this.pixelScaleY)
 
-	if useRoi<len(tr.PageRois) {
-		pRoiIndex := useRoi
-		// for pRoiIndex := 0; pRoiIndex < len(tr.PageRois); pRoiIndex++ {
-		X := int(float64(tr.PageRois[pRoiIndex].X) * this.pixelScale)
-		Y := int(float64(tr.PageRois[pRoiIndex].Y) * this.pixelScaleY)
-		W := int(float64(tr.PageRois[pRoiIndex].Width) * this.pixelScale)
-		H := int(float64(tr.PageRois[pRoiIndex].Height) * this.pixelScaleY)
+			rect:=image.Rect( X, Y, X+W, Y+H)
+			croppedMat := img.Region(rect)
+			
+			if !croppedMat.Empty() {
+				fMarks:=this.findCircles(croppedMat, circleSize,minDist ,useRois[useRoi] )
+				for i := 0; i < len(fMarks); i++ {
+					marks = append(marks, fMarks[i])
+				}
 
-		rect:=image.Rect( X, Y, X+W, Y+H)
-		croppedMat := img.Region(rect)
-		
-		if !croppedMat.Empty() {
-			marks:=this.findCircles(croppedMat, circleSize,minDist )
-			tr.Marks=marks
-			if tr.PageRois[pRoiIndex].ExcpectedMarks==len(marks) {
-				tr.IsCorrect=true
+
+				/*
+				
+				*/
 			}
+			croppedMat.Close()
 		}
-		croppedMat.Close()
 	}
+	tr.Marks=marks
+	if tr.PageRois[useRois[0]].ExcpectedMarks==len(marks) {
+		tr.IsCorrect=true
+	}
+
 	return tr
 	
 
@@ -325,8 +337,27 @@ func (this *GrabcameraClass) processImage(){
 												}
 											}
 
+											listOfRoiIndexes := []int{}
 
+
+											foundIndex := -1
 											for pRoiIndex := 0; pRoiIndex < len(lastTesseractResult.PageRois); pRoiIndex++ {
+												titles := []string{}
+					
+												for i := 0; i < len(lastTesseractResult.PageRois[pRoiIndex].Types); i++ {
+													titles = append(titles, lastTesseractResult.PageRois[pRoiIndex].Types[i].Title)
+												}
+												foundIndex = IndexOf(titles, lastTesseractResult.Title)
+												if (foundIndex>-1) {
+													listOfRoiIndexes = append(listOfRoiIndexes,pRoiIndex)
+												}
+											}
+
+											log.Println("listOfRoiIndexes",listOfRoiIndexes)
+											log.Println("==================================")
+
+											if len(listOfRoiIndexes) >= 1 {
+											/*for pRoiIndex := 0; pRoiIndex < len(listOfRoiIndexes); pRoiIndex++ {
 												titles := []string{}
 					
 												for i := 0; i < len(lastTesseractResult.PageRois[pRoiIndex].Types); i++ {
@@ -334,11 +365,13 @@ func (this *GrabcameraClass) processImage(){
 												}
 												foundIndex := IndexOf(titles, lastTesseractResult.Title)
 												if (foundIndex>-1) {
+													*/
 
-													res := this.processRegionsOfInterest(lastTesseractResult,paper,pRoiIndex)
+													res := this.processRegionsOfInterest(lastTesseractResult,paper,listOfRoiIndexes)
+
 
 													if false {
-														log.Println("res.Marks",res.Marks,pRoiIndex,foundIndex)
+														log.Println("res.Marks",res.Marks,listOfRoiIndexes)
 													}
 													//	log.Println("res.Id",lastTesseractResult.PageRois[pRoiIndex].Types[foundIndex].Id)
 													green = 255
@@ -354,8 +387,13 @@ func (this *GrabcameraClass) processImage(){
 														for i := 0; i < len(res.Marks); i++ {
 															if i >= len(checkMarkList) {
 
-																offestX := int(float64(lastTesseractResult.PageRois[pRoiIndex].X) * this.pixelScale)	
-																offestY := int(float64(lastTesseractResult.PageRois[pRoiIndex].Y) * this.pixelScaleY)
+																offestX := int(float64(lastTesseractResult.PageRois[res.Marks[i].RoiIndex].X) * this.pixelScale)	
+																offestY := int(float64(lastTesseractResult.PageRois[res.Marks[i].RoiIndex].Y) * this.pixelScaleY)
+
+																fmt.Println("XYZ",
+																	offestX + res.Marks[i].X, 
+																	offestY + res.Marks[i].Y,
+																)
 
 																checkMarkList = append(checkMarkList, structs.CheckMarkList{
 																	Point: image.Point{
@@ -404,7 +442,7 @@ func (this *GrabcameraClass) processImage(){
 																strCurrentBoxBarcode,
 																strCurrentStackBarcode,
 																res.Barcode,
-																lastTesseractResult.PageRois[pRoiIndex].Types[foundIndex].Id,
+																lastTesseractResult.PageRois[listOfRoiIndexes[0]].Types[foundIndex].Id,
 																b.String(),
 																"data:image/jpeg;base64,"+image_base64,
 															)
@@ -432,7 +470,7 @@ func (this *GrabcameraClass) processImage(){
 													}else{
 														// log.Println("IsCorrect NO!")
 													}
-												}
+												// }
 											}
 										}else{
 											green = 250

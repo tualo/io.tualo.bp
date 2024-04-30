@@ -40,6 +40,7 @@ type CheckMarks struct {
 	Y       int
 	Radius	   int
 	Checked bool
+	RoiIndex int
 }
 
 
