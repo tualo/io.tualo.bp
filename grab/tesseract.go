@@ -43,6 +43,7 @@ func (this *GrabcameraClass) tesseract(img gocv.Mat) (structs.TesseractReturnTyp
 	if this.globals.TesseractPrefix != "" {
 		client.SetTessdataPrefix(this.globals.TesseractPrefix)
 	}
+	client.SetLanguage("deu")
 
 	documentConfigurations := this.documentConfigurations
 
@@ -102,15 +103,22 @@ func (this *GrabcameraClass) tesseract(img gocv.Mat) (structs.TesseractReturnTyp
 			fmt.Println("searchFor",searchFor)
 			for j := 0; j < len(documentConfigurations[i].Titles); j++ {
 				distance := levenshtein.ComputeDistance(searchFor, documentConfigurations[i].Titles[j])
+				errorRate:=float64(distance) /*- float64(len( documentConfigurations[i].Titles[j])-len(searchFor)))*/ /	float64(len( documentConfigurations[i].Titles[j]))
+
 				if true {
 					fmt.Printf("The distance between: \n*%s* \n*%s* \nis %d %d.\n", 
 					searchFor, 
 					documentConfigurations[i].Titles[j], 
 					len( documentConfigurations[i].Titles[j]), 
 					distance,
+
+				)
+				fmt.Printf("Len diff %.2f\nRatio %.2f\n",
+					float64(len( documentConfigurations[i].Titles[j])-len(searchFor)),
+					(float64(distance) - float64(len( documentConfigurations[i].Titles[j])-len(searchFor))) /	float64(len( documentConfigurations[i].Titles[j]))			,
 				)
 				}
-				if distance < 3 {
+				if errorRate < 0.3 {
 					result.Title=documentConfigurations[i].Titles[j]
 					
 					//title = out[0].Word
