@@ -211,7 +211,7 @@ func (this *GlobalValuesClass) SetDefaults(){
 	this.MinDistHoughCircles = 50
 	this.ThresholdHoughCircles = 90
 	this.AccumulatorThresholdHoughCircles = 10
-	this.GaussianBlurFindCircles = 19
+	this.GaussianBlurFindCircles = 1
 	this.AdaptiveThresholdBlockSize = 9
 	this.AdaptiveThresholdSubtractMean = 4.0
 	this.TesseractPrefix = ""
@@ -239,6 +239,9 @@ func (this *GlobalValuesClass) Load() {
 	this.ThresholdHoughCircles = this.ConfigData.GetFloat64("settings","thresholdHoughCircles",defaults.ThresholdHoughCircles)
 	this.AccumulatorThresholdHoughCircles = this.ConfigData.GetFloat64("settings","accumulatorThresholdHoughCircles",defaults.AccumulatorThresholdHoughCircles)
 	this.GaussianBlurFindCircles = this.ConfigData.GetInt("settings","gaussianBlurFindCircles",defaults.GaussianBlurFindCircles)
+	if this.GaussianBlurFindCircles==19 {
+		this.GaussianBlurFindCircles = 1
+	}
 	this.AdaptiveThresholdBlockSize = this.ConfigData.GetInt("settings","adaptiveThresholdBlockSize",defaults.AdaptiveThresholdBlockSize)
 	this.AdaptiveThresholdSubtractMean = this.ConfigData.GetFloat32("settings","adaptiveThresholdSubtractMean",defaults.AdaptiveThresholdSubtractMean)
 	this.TesseractPrefix = this.ConfigData.Get("settings","tesseractPrefix")
