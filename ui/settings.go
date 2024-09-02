@@ -56,7 +56,9 @@ func (this *SettingsScreenClass) makeSettingsForm() fyne.CanvasObject {
 		this.globals.IntCamera = 0
 	}
 	if len(cameraList)>0 {
-		this.cameraSelectWidget.SetSelected(this.cameraSelectWidget.Options[this.globals.IntCamera])
+		if this.globals.IntCamera>len(cameraList) {
+			this.cameraSelectWidget.SetSelected(this.cameraSelectWidget.Options[this.globals.IntCamera])
+		}
 	}
 
 
