@@ -66,10 +66,11 @@ func (this *GrabcameraClass) findCircles(croppedMat gocv.Mat , circleSize int,mi
 	gocv.CvtColor(croppedMat, &imgGray, gocv.ColorBGRToGray)
 
 
-	blurSize := int(math.Round( float64(this.globals.GaussianBlurFindCircles) * this.pixelScale))
+	blurSize := int(math.Round( float64(this.globals.GaussianBlurFindCircles) *  this.pixelScale )  )
 	if blurSize % 2 == 0 {
 		blurSize++
 	}
+	log.Println("blurSize  ",blurSize,  this.pixelScale)
 
 	gocv.GaussianBlur(imgGray, &imgBlur, image.Point{blurSize, blurSize}, 0, 0, gocv.BorderDefault)
 	gocv.AdaptiveThreshold(imgBlur, &imgRGray, 255.0, gocv.AdaptiveThresholdGaussian, gocv.ThresholdBinary, this.globals.AdaptiveThresholdBlockSize, this.globals.AdaptiveThresholdSubtractMean)
@@ -110,7 +111,7 @@ func (this *GrabcameraClass) findCircles(croppedMat gocv.Mat , circleSize int,mi
 	gocv.CvtColor(imgRGray, &imgCol, gocv.ColorGrayToBGR)
 	DrawCircles(&imgCol, &circles, this.globals.InnerOverdrawDrawCircles*int(this.pixelScale), this.globals.OuterOverdrawDrawCircles*int(this.pixelScale), checkMarks)
 
-	//gocv.IMWrite("circles.jpg", imgRGray)
+	// gocv.IMWrite("circles.jpg", imgRGray)
 
 	circles.Close()
 	imgRGray.Close()

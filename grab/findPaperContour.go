@@ -17,7 +17,18 @@ func findPaperContour(img gocv.Mat) gocv.PointVector {
 	imgBlur := gocv.NewMat()
 	gocv.GaussianBlur(imgGray, &imgBlur, image.Point{5, 5}, 0, 0, gocv.BorderDefault)
 	imgThresh := gocv.NewMat()
+	// gocv.Threshold(imgBlur, &imgThresh, 140, 255, gocv.ThresholdBinary+gocv.ThresholdOtsu)
+	// gocv.Threshold(imgBlur, &imgThresh, 4, 255, gocv.ThresholdBinary+gocv.ThresholdOtsu)
+	gocv.Threshold(imgBlur, &imgThresh, 35, 255, gocv.ThresholdBinary /*+gocv.ThresholdOtsu*/ )
+	
+
+
+	gocv.GaussianBlur(imgThresh, &imgBlur, image.Point{15, 15}, 0, 0, gocv.BorderDefault)
 	gocv.Threshold(imgBlur, &imgThresh, 140, 255, gocv.ThresholdBinary+gocv.ThresholdOtsu)
+
+
+
+	gocv.IMWrite("imgThresh.jpg", imgThresh)
 	contours := gocv.FindContours(imgThresh, gocv.RetrievalCComp, gocv.ChainApproxSimple)
 	  
 	maxArea := 0.0

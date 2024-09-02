@@ -172,7 +172,7 @@ func (this *GrabcameraClass) processImage(){
 	lastBarcode := "wlekfjwuqezgzw"
 	doFindCircles := false
 	checkMarkList := []structs.CheckMarkList{}
-
+	debugMarkList := []structs.CheckMarkList{}
 	strCurrentBoxBarcode := ""
 	strCurrentStackBarcode := ""
 	
@@ -192,13 +192,13 @@ func (this *GrabcameraClass) processImage(){
 		//for range grabVideoCameraTicker.C {	
 		img,ok := <-this.paperChannelImage
 		if ok {
-			if false {
+			if true {
 				log.Println("got image",ok,img.Size(),len(this.paperChannelImage))
 			}
 
-			green = 0
-			red = 0
-			blue = 0
+//			green = 0
+//			red = 0
+//			blue = 0
 
 			if !img.Empty() {
 
@@ -216,8 +216,8 @@ func (this *GrabcameraClass) processImage(){
 				
 					approx := gocv.ApproxPolyDP(contour, 0.02*gocv.ArcLength(contour, true), true)
 					
-					if approx.Size() != 4 {
-						if false {
+					if !(approx.Size() >= 4 &&  approx.Size() <= 7) {
+						if true {
 							log.Println("findPaperContour done %s %v",time.Since(start),approx.Size())
 						}
 						approx.Close()
@@ -228,7 +228,7 @@ func (this *GrabcameraClass) processImage(){
 						cornerPoints := getCornerPoints(contour)
 						topLeftCorner := cornerPoints["topLeftCorner"]
 						bottomRightCorner := cornerPoints["bottomRightCorner"]
-						if false {
+						if true {
 							log.Printf("template: %d %d",  bottomRightCorner.X-topLeftCorner.X, bottomRightCorner.Y-topLeftCorner.Y )
 						}
 
@@ -251,11 +251,13 @@ func (this *GrabcameraClass) processImage(){
 						// log.Println("extractPaper done %s %f",time.Since(start),area)
 						if area > 0.1 {
 							codes := this.findBarcodes(scanner,paper)
-							if false {
+							if true {
 								log.Println("findBarcodes done %s %v",time.Since(start),codes)
 							}
 							if len(codes) > 0 {
 								for _, code := range codes {
+
+									//fmt.Println("code **",code.Type,code.Data)
 									if code.Type == "CODE-39" {
 										if code.Data[0:3]=="FC4" {
 											if len(this.currentBoxBarcode) == cap(this.currentBoxBarcode) {
@@ -308,7 +310,8 @@ func (this *GrabcameraClass) processImage(){
 												lastTesseractResult = result
 												doFindCircles = true
 												checkMarkList = []structs.CheckMarkList{}
-												//fmt.Println("lastTesseractResult **",lastTesseractResult.Title)
+												debugMarkList = []structs.CheckMarkList{}
+												// fmt.Println("lastTesseractResult **",lastTesseractResult.Title)
 												green = 255
 												red = 255
 												blue = 255
@@ -317,7 +320,7 @@ func (this *GrabcameraClass) processImage(){
 												green = 100
 												red = 255
 												blue = 100
-												//fmt.Println("tesseract no bp found")
+												fmt.Println("tesseract no bp found")
 											}
 											
 										}
@@ -371,14 +374,41 @@ func (this *GrabcameraClass) processImage(){
 													res := this.processRegionsOfInterest(lastTesseractResult,paper,listOfRoiIndexes)
 
 
-													if false {
-														log.Println("res.Marks",res.Marks,listOfRoiIndexes)
+													if true {
+														log.Println("res.Marks",res.Marks,listOfRoiIndexes,res.IsCorrect)
 													}
 													//	log.Println("res.Id",lastTesseractResult.PageRois[pRoiIndex].Types[foundIndex].Id)
 													green = 255
-													red = 0
+													red = 100
 													blue = 255
 
+
+													for i := 0; i < len(res.Marks); i++ {
+														if i >= len(debugMarkList) {
+
+															offestX := int(float64(lastTesseractResult.PageRois[res.Marks[i].RoiIndex].X) * this.pixelScale)	
+															offestY := int(float64(lastTesseractResult.PageRois[res.Marks[i].RoiIndex].Y) * this.pixelScaleY)
+
+															fmt.Println("XYZ",
+																offestX + res.Marks[i].X, 
+																offestY + res.Marks[i].Y,
+															)
+
+															debugMarkList = append(debugMarkList, structs.CheckMarkList{
+																Point: image.Point{
+																	offestX + res.Marks[i].X, 
+																	offestY + res.Marks[i].Y,
+																},
+																Pixelsize: res.Marks[i].Radius,
+															})
+														}
+														if res.Marks[i].Checked {
+															debugMarkList[i].Sum += 1
+														}
+														debugMarkList[i].Count++
+														debugMarkList[i].AVG = float64(debugMarkList[i].Sum) / float64(debugMarkList[i].Count)
+														debugMarkList[i].Checked = debugMarkList[i].AVG > this.globals.SumMarksAVG
+													}
 
 													if res.IsCorrect {
 														// log.Println("IsCorrect",res)
@@ -461,7 +491,7 @@ func (this *GrabcameraClass) processImage(){
 
 																	green = 250
 																	red = 0
-																	blue = 50
+																	blue = 0
 																}else{
 																	log.Println("SendReading ERROR",res.Msg)
 																}
@@ -474,9 +504,9 @@ func (this *GrabcameraClass) processImage(){
 												 }
 											}
 										}else{
-											green = 250
-											red = 0
-											blue = 50
+											// green = 50
+											// red = 0
+											// blue = 50
 										}
 										//log.Println("code use tesseract",code.Data,tesseractNeeded,lastTesseractResult)
 									}
@@ -496,8 +526,21 @@ func (this *GrabcameraClass) processImage(){
 						
 						// gocv.Line(&xp, image.Point{0,0}, image.Point{200,img.Rows()},color.RGBA{0,0,255,0}, 20)
 
+						gocv.CvtColor(img, &img, gocv.ColorBGRToBGRA)
+
+						for i := 0; i < len(debugMarkList); i++ {
+							//playGround
+							if debugMarkList[i].Checked {
+								gocv.Circle(&playGround, debugMarkList[i].Point, debugMarkList[i].Pixelsize, color.RGBA{0, 155, 0, 0}, 10)
+							}else{
+								gocv.Circle(&playGround, debugMarkList[i].Point, debugMarkList[i].Pixelsize, color.RGBA{155, 0, 0, 0}, 10)
+							}
+						}
+
+						gocv.WarpPerspective(playGround, &img, invM, image.Point{img.Cols(), img.Rows()})
+						
+
 						if !doFindCircles && !tesseractNeeded && !paper.Empty() && (red + green + blue > 0) {
-							gocv.CvtColor(img, &img, gocv.ColorBGRToBGRA)
 							for i := 0; i < len(checkMarkList); i++ {
 								//playGround
 								if checkMarkList[i].Checked {
@@ -514,6 +557,10 @@ func (this *GrabcameraClass) processImage(){
 
 						drawContours := gocv.NewPointsVector()
 						drawContours.Append(contour)
+						
+
+						fmt.Printf("red: %i, green: %i, blue: %i  \n", red,green,blue)
+															
 						gocv.DrawContours(&img, drawContours, -1, color.RGBA{uint8(red), uint8(green), uint8(blue), 120}, int(8.0*this.pixelScale))
 						drawContours.Close()
 
