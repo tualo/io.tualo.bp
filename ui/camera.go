@@ -34,6 +34,7 @@ type MainScreenClass struct {
 	boxBarcode chan string
 	stackBarcode chan string
 	ballotBarcode chan string
+	escapedImage chan bool
 
 	ticker *time.Ticker
 	main fyne.CanvasObject
@@ -44,11 +45,12 @@ func (t *MainScreenClass) SetOnLogout(onLogout func()) {
 	t.onLogout = onLogout
 }
 
-func (t *MainScreenClass) SetChannel(channel chan gocv.Mat, boxBarcode chan string, stackBarcode chan string, ballotBarcode chan string) {
+func (t *MainScreenClass) SetChannel(channel chan gocv.Mat, boxBarcode chan string, stackBarcode chan string, ballotBarcode chan string, escapedImage chan bool) {
 	t.channel = channel
 	t.boxBarcode = boxBarcode
 	t.stackBarcode = stackBarcode
 	t.ballotBarcode = ballotBarcode
+	t.escapedImage = escapedImage
 
 
 }
@@ -145,6 +147,8 @@ func (t *MainScreenClass) makeMain() fyne.CanvasObject {
 	if !t.showImage {
 		t.displayImage.Hide()
 	}
+
+
 	return container.NewBorder(
 		nil, 
 		nil, 
@@ -202,6 +206,8 @@ func (this *MainScreenClass) SetGlobals(globals *globals.GlobalValuesClass) {
 	this.globals = globals
 }
 
+
+
 func (t *MainScreenClass) makeOuterContainer(onStartStopCamera func()) fyne.CanvasObject {
 	t.button = widget.NewButton("Start/Stop", onStartStopCamera)
 	t.button.SetText("Start")
@@ -212,16 +218,45 @@ func (t *MainScreenClass) makeOuterContainer(onStartStopCamera func()) fyne.Canv
 	
 	t.settingsContainer.Hide()
 	t.main = t.makeMain()
-	return container.NewBorder(
+
+
+	
+
+	
+	c:=container.NewBorder(
+	//return container.NewBorder(
 		t.makeTopBar( ), 
 		t.button, 
 		nil, 
 		t.settingsContainer,  
 		t.main,
 	)
+
+	
+
+	return c
 }
 
 
+func (t *MainScreenClass) OnTypedKey(k *fyne.KeyEvent,onStartStopCamera func()){
+	if k.Name == "Space" {
+		if t.GetPlayState() {
+			//t.SetPlayState(false);
+			onStartStopCamera(	);
+		}else{
+			//t.SetPlayState(true);
+			onStartStopCamera(	);
+		}
+		log.Println(">>>>")
+	}
+	if k.Name == "Escape" {
+		if t.GetPlayState() {
+			t.escapedImage <- true
+			log.Println("<<<<<<<<<<<<")
+		}
+	}
+
+}
 
 
 func (t *MainScreenClass) CreateContainer(onStartStopCamera func()) *fyne.Container {
@@ -229,6 +264,7 @@ func (t *MainScreenClass) CreateContainer(onStartStopCamera func()) *fyne.Contai
 		layout.NewPaddedLayout(),
 		t.makeOuterContainer(onStartStopCamera),
 	)
+
 	return container
 }
 
@@ -239,6 +275,9 @@ func NewMainScreenClass() *MainScreenClass {
 		onLogout: nil,
 
 	}
+
+	
+
 	// o.SetPlayState( false )
 	return o
 }

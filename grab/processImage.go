@@ -98,7 +98,7 @@ func (this *GrabcameraClass) findBarcodes(scanner *barcode.ImageScanner, img goc
 func (this *GrabcameraClass) processRegionsOfInterest(tr structs.TesseractReturnType,img gocv.Mat, useRois []int) structs.TesseractReturnType{
 	
 
-	log.Println("processRegionsOfInterest Ratio ",float64(img.Cols()) / float64(img.Rows()),  float64(tr.Pagesize.Width) / float64(tr.Pagesize.Height) )
+	//log.Println("processRegionsOfInterest Ratio ",float64(img.Cols()) / float64(img.Rows()),  float64(tr.Pagesize.Width) / float64(tr.Pagesize.Height) )
 						
 	this.pixelScale =  float64(img.Cols()) /  float64(tr.Pagesize.Width)
 	this.pixelScaleY =  float64(img.Rows()) /  float64(tr.Pagesize.Height)
@@ -192,7 +192,7 @@ func (this *GrabcameraClass) processImage(){
 		//for range grabVideoCameraTicker.C {	
 		img,ok := <-this.paperChannelImage
 		if ok {
-			if true {
+			if false {
 				log.Println("got image",ok,img.Size(),len(this.paperChannelImage))
 			}
 
@@ -217,7 +217,7 @@ func (this *GrabcameraClass) processImage(){
 					approx := gocv.ApproxPolyDP(contour, 0.02*gocv.ArcLength(contour, true), true)
 					
 					if !(approx.Size() >= 4 &&  approx.Size() <= 7) {
-						if true {
+						if false {
 							log.Println("findPaperContour done %s %v",time.Since(start),approx.Size())
 						}
 						approx.Close()
@@ -228,14 +228,14 @@ func (this *GrabcameraClass) processImage(){
 						cornerPoints := getCornerPoints(contour)
 						topLeftCorner := cornerPoints["topLeftCorner"]
 						bottomRightCorner := cornerPoints["bottomRightCorner"]
-						if true {
+						if false {
 							log.Printf("template: %d %d",  bottomRightCorner.X-topLeftCorner.X, bottomRightCorner.Y-topLeftCorner.Y )
 						}
 
 						paper,invM := extractPaper(img, contour, bottomRightCorner.X-topLeftCorner.X, bottomRightCorner.Y-topLeftCorner.Y, cornerPoints)
 						
 						if paper.Empty() {
-							if true {
+							if false {
 								log.Printf("paper empty")
 							}
 							contour.Close()
@@ -251,7 +251,7 @@ func (this *GrabcameraClass) processImage(){
 						// log.Println("extractPaper done %s %f",time.Since(start),area)
 						if area > 0.1 {
 							codes := this.findBarcodes(scanner,paper)
-							if true {
+							if false {
 								log.Println("findBarcodes done %s %v",time.Since(start),codes)
 							}
 							if len(codes) > 0 {
@@ -292,7 +292,7 @@ func (this *GrabcameraClass) processImage(){
 											}
 											this.ballotBarcode <- code.Data
 
-											// log.Println("code",code)
+											log.Println(">>>>> RESET code",lastBarcode)
 											tesseractNeeded = true
 											doFindCircles = false
 											checkMarkList = []structs.CheckMarkList{}
@@ -559,7 +559,7 @@ func (this *GrabcameraClass) processImage(){
 						drawContours.Append(contour)
 						
 
-						fmt.Printf("red: %i, green: %i, blue: %i  \n", red,green,blue)
+						// fmt.Printf("red: %i, green: %i, blue: %i  \n", red,green,blue)
 															
 						gocv.DrawContours(&img, drawContours, -1, color.RGBA{uint8(red), uint8(green), uint8(blue), 120}, int(8.0*this.pixelScale))
 						drawContours.Close()
@@ -583,6 +583,16 @@ func (this *GrabcameraClass) processImage(){
 			this.imageChannelPaper <- cloned
 			img.Close()
 		}
+
+		/*
+		if len(this.escapedImage)>0 {
+			escapedImage,escapedImageOk := <-this.escapedImage
+			if escapedImageOk {
+				log.Println("EscapedImage",escapedImage)
+
+			}
+		}
+		*/
 		//log.Println("processImage done %s",time.Since(start))
 	}
 	//log.Println("processImage exit",runVideo)

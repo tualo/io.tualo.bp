@@ -26,6 +26,8 @@ type GrabcameraClass struct {
 	currentStackBarcode chan string
 	ballotBarcode chan string
 
+	escapedImage chan bool
+
 	/*
 	tesseractPrefix string
 	intCamera int
@@ -208,8 +210,8 @@ func (this *GrabcameraClass) Grabcamera( ) {
 	}
 
 }
-func (this *GrabcameraClass) GetChannel() (chan gocv.Mat, chan string, chan string, chan string) {
-	return this.imageChannelPaper, this.currentBoxBarcode, this.currentStackBarcode, this.ballotBarcode
+func (this *GrabcameraClass) GetChannel() (chan gocv.Mat, chan string, chan string, chan string, chan bool) {
+	return this.imageChannelPaper, this.currentBoxBarcode, this.currentStackBarcode, this.ballotBarcode, this.escapedImage
 }
 
 func NewGrabcameraClass() *GrabcameraClass {

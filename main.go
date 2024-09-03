@@ -28,7 +28,6 @@ var appID = "io.tualo.bp"
 func main() {
 
 
-
 	configData = config.NewConfigurationClass()
 	configData.SetAppID(appID)
 	configData.Load()
@@ -65,8 +64,10 @@ func main() {
 	mainScreenClass = ui.NewMainScreenClass()
 
 	mainScreenClass.SetGlobals(g)
-	
-	cameraContainer = mainScreenClass.CreateContainer(func() {
+
+
+
+	startStop:=func() {
 
 		if !mainScreenClass.GetPlayState() {
 			conf,err := api.GetConfig()
@@ -84,7 +85,9 @@ func main() {
 		mainScreenClass.SetChannel(grabber.GetChannel())
 		grabber.SetRun(!mainScreenClass.GetPlayState())
 		mainScreenClass.SetPlayState(!mainScreenClass.GetPlayState())
-	})
+	}
+	
+	cameraContainer = mainScreenClass.CreateContainer(startStop)
 
 	mainScreenClass.SetOnLogout(func( ) {
 		cameraContainer.Hide()
@@ -104,6 +107,13 @@ func main() {
 	w.SetContent(content)
 
 	w.SetMaster()
+
+	w.Canvas().SetOnTypedKey(func(k *fyne.KeyEvent) {
+		log.Println(k.Name)
+		if (cameraContainer.Visible()){
+			mainScreenClass.OnTypedKey(k,startStop)
+		}
+    })
 
 	w.Resize(fyne.NewSize(640, 460))
 	w.ShowAndRun()
