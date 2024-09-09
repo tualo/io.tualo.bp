@@ -26,8 +26,12 @@ type GrabcameraClass struct {
 	currentStackBarcode chan string
 	ballotBarcode chan string
 
+	currentStateChannel chan string
+	currentOCRChannel chan string
+
 	escapedImage chan bool
 
+	 
 	/*
 	tesseractPrefix string
 	intCamera int
@@ -127,33 +131,37 @@ func (this *GrabcameraClass) Grabcamera( ) {
 
 	defer muster.Close()
 	if this.loadMuster {
-		muster = gocv.IMRead("/Users/thomashoffmann/Desktop/muster2.jpg", gocv.IMReadColor)
+		muster = gocv.IMRead("sample/sz1.jpg", gocv.IMReadColor)
+
+		
 		//log.Println("grabcamera >>>>>>>>>>>>>>>>>>>>",muster.Cols(),muster.Rows())
 		//return
 	}else{
 
-	webcam, err = gocv.VideoCaptureDeviceWithAPI(this.globals.IntCamera,0)
-	
+		webcam, err = gocv.VideoCaptureDeviceWithAPI(this.globals.IntCamera,0)
+		
 
-	if this.globals.LogGrabcamera {
-		log.Println("grabcamera >>>>>>>>>>>>>>>>>>>>",this.globals.IntCamera)
-	}
-	if this.globals.ForcedCameraWidth > 0 {
-		webcam.Set(gocv.VideoCaptureFrameWidth, float64(this.globals.ForcedCameraWidth))
-	}
-	if this.globals.ForcedCameraHeight > 0 {
-		webcam.Set(gocv.VideoCaptureFrameHeight, float64(this.globals.ForcedCameraHeight))
-	}
+		if this.globals.LogGrabcamera {
+			log.Println("grabcamera >>>>>>>>>>>>>>>>>>>>",this.globals.IntCamera)
+		}
+		if this.globals.ForcedCameraWidth > 0 {
+			webcam.Set(gocv.VideoCaptureFrameWidth, float64(this.globals.ForcedCameraWidth))
+		}
+		if this.globals.ForcedCameraHeight > 0 {
+			webcam.Set(gocv.VideoCaptureFrameHeight, float64(this.globals.ForcedCameraHeight))
+		}
 
-	webcam.Set(gocv.VideoCaptureFrameWidth, 4608/2)
-	webcam.Set(gocv.VideoCaptureFrameHeight, 3456/2)
+		//webcam.Set(gocv.VideoCaptureFrameWidth, webcam.Get(gocv.VideoCaptureFrameWidth) / 2)
+		//webcam.Set(gocv.VideoCaptureFrameHeight, webcam.Get(gocv.VideoCaptureFrameHeight) / 2)
+		//webcam.Set(gocv.VideoCaptureFrameWidth, 4608/2)
+		//webcam.Set(gocv.VideoCaptureFrameHeight, 3456/2)
 
-	if err != nil {
-		fmt.Println("Error opening capture device: ", 0)
-		return
+		if err != nil {
+			fmt.Println("Error opening capture device: ", 0)
+			return
+		}
+		defer webcam.Close()
 	}
-	defer webcam.Close()
-}
 
 	img := gocv.NewMat()
 	if this.loadMuster {
@@ -210,8 +218,8 @@ func (this *GrabcameraClass) Grabcamera( ) {
 	}
 
 }
-func (this *GrabcameraClass) GetChannel() (chan gocv.Mat, chan string, chan string, chan string, chan bool) {
-	return this.imageChannelPaper, this.currentBoxBarcode, this.currentStackBarcode, this.ballotBarcode, this.escapedImage
+func (this *GrabcameraClass) GetChannel() (chan gocv.Mat, chan string, chan string, chan string, chan bool, chan string, chan string) {
+	return this.imageChannelPaper, this.currentBoxBarcode, this.currentStackBarcode, this.ballotBarcode, this.escapedImage, this.currentStateChannel, this.currentOCRChannel
 }
 
 func NewGrabcameraClass() *GrabcameraClass {
@@ -223,8 +231,11 @@ func NewGrabcameraClass() *GrabcameraClass {
 		paperChannelImage: make(chan gocv.Mat,1),
 		imageChannelPaper: make(chan gocv.Mat,1),
 		currentBoxBarcode: make(chan string, 1),
+		currentStateChannel: make(chan string, 1),
+		currentOCRChannel: make(chan string, 1),
 		currentStackBarcode: make(chan string, 1),
 		ballotBarcode: make(chan string, 1),
+		loadMuster: false,
 	
 
 				/*

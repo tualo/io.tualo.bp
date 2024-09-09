@@ -24,6 +24,9 @@ type MainScreenClass struct {
 	stackLabelWidget *widget.Label
 	ballotLabelWidget *widget.Label
 
+	ocrLabelWidget *widget.Label
+	stateLabelWidget *widget.Label
+
 	displayImage *canvas.Image
 	settingsScreenClass *SettingsScreenClass
 	settingsContainer *fyne.Container
@@ -36,6 +39,11 @@ type MainScreenClass struct {
 	ballotBarcode chan string
 	escapedImage chan bool
 
+
+	currentStateChannel chan string
+	currentOCRChannel chan string
+
+
 	ticker *time.Ticker
 	main fyne.CanvasObject
 
@@ -45,12 +53,14 @@ func (t *MainScreenClass) SetOnLogout(onLogout func()) {
 	t.onLogout = onLogout
 }
 
-func (t *MainScreenClass) SetChannel(channel chan gocv.Mat, boxBarcode chan string, stackBarcode chan string, ballotBarcode chan string, escapedImage chan bool) {
+func (t *MainScreenClass) SetChannel(channel chan gocv.Mat, boxBarcode chan string, stackBarcode chan string, ballotBarcode chan string, escapedImage chan bool, currentStateChannel chan string, currentOCRChannel chan string) {
 	t.channel = channel
 	t.boxBarcode = boxBarcode
 	t.stackBarcode = stackBarcode
 	t.ballotBarcode = ballotBarcode
 	t.escapedImage = escapedImage
+	t.currentStateChannel = currentStateChannel
+	t.currentOCRChannel = currentOCRChannel
 
 
 }
@@ -87,6 +97,20 @@ func (t *MainScreenClass) RedrawImage() {
 			ballotBarcode,ok4 := <- t.ballotBarcode
 			if ok4 {
 				t.ballotLabelWidget.SetText("Stimmzettel: "+ballotBarcode)
+			}
+		}
+
+		if len(t.currentStateChannel)>0 {
+			stateText,ok5 := <- t.currentStateChannel
+			if ok5 {
+				t.stateLabelWidget.SetText("Zustand: "+stateText)
+			}
+		}
+
+		if len(t.currentOCRChannel)>0 {
+			ocrText,ok6 := <- t.currentOCRChannel
+			if ok6 {
+				t.ocrLabelWidget.SetText("OCR: "+ocrText)
 			}
 		}
 
@@ -164,12 +188,18 @@ func (t *MainScreenClass) makeTopBar() fyne.CanvasObject {
 	t.boxLabelWidget = widget.NewLabel("Kiste: UNBEKANNT")
 	t.stackLabelWidget = widget.NewLabel("Stapel: UNBEKANNT")
 	t.ballotLabelWidget = widget.NewLabel("Stimmzettel: UNBEKANNT")
+
+	t.ocrLabelWidget = widget.NewLabel("OCR: UNBEKANNT")
+	t.stateLabelWidget = widget.NewLabel("Zustand: UNBEKANNT")
+
 	return container.New(
 		layout.NewHBoxLayout(), 
 		
 		t.boxLabelWidget,
 		t.stackLabelWidget,
 		t.ballotLabelWidget,
+		t.ocrLabelWidget,
+		t.stateLabelWidget,
 		layout.NewSpacer(), 
 
 		t.fullNameWidget,

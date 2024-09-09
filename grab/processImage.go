@@ -161,6 +161,120 @@ func (this *GrabcameraClass) processRegionsOfInterest(tr structs.TesseractReturn
 
 }
 
+func (this *GrabcameraClass) setState(name string,oldState structs.ImageProcessorState) structs.ImageProcessorState{
+	state := structs.ImageProcessorState{}
+	if false {
+		log.Println("setState",name,oldState.Name);
+	}
+
+	if oldState.Name == "sendDone" && name != "ballotPaperCode"  && name != "noBarcodeFound" {
+		return oldState
+	} 
+
+	state.Name = name
+
+	if len(this.currentStateChannel)==cap(this.currentStateChannel) {
+		txt,_:=<-this.currentStateChannel
+		if false {
+			log.Println("setState",txt)
+		}
+	}
+	this.currentStateChannel <- name
+
+
+	if (name == "default") {
+		state.Red = 0
+		state.Green = 0
+		state.Blue = 0
+	}
+	if (name == "findPaperContour") {
+		state.Red = 110
+		state.Green = 110
+		state.Blue = 110
+	}
+
+	if (name == "findPaperContourFailed") {
+		state.Red = 155
+		state.Green = 110
+		state.Blue = 110
+	}
+
+	if (name == "detectedPaper") {
+		state.Red = 200
+		state.Green = 110
+		state.Blue = 110
+	}
+
+	if (name == "findBarcodes") {
+		state.Red = 110
+		state.Green = 200
+		state.Blue = 110
+	}
+
+	if (name == "noBarcodeFound") {
+		state.Red = 255
+		state.Green = 0
+		state.Blue = 0
+	}
+
+	if (name == "findBoxBarcodes") {
+		state.Red = 110
+		state.Green = 110
+		state.Blue = 200
+	}
+
+	if (name == "findStackBarcodes") {
+		state.Red = 200
+		state.Green = 200
+		state.Blue = 110
+	}
+
+	if (name == "ballotPaperCode") {
+		state.Red = 0
+		state.Green = 0
+		state.Blue = 255
+	}
+
+	if (name == "ballotPaperDetected") {
+		state.Red = 255
+		state.Green = 255
+		state.Blue = 255
+	}
+
+	if (name == "ballotPaperNotDetected") {
+		state.Red = 100
+		state.Green = 255
+		state.Blue = 100
+	}
+
+	if (name == "ballotPaperMarksAnalysed") {
+		state.Red = 255
+		state.Green = 100
+		state.Blue = 255
+	}
+
+	if (name == "doFindCirclesDone") {
+		state.Red = 155
+		state.Green = 50
+		state.Blue = 155
+	}
+
+	if (name == "sendError") {
+		state.Red = 255
+		state.Green = 120
+		state.Blue = 120
+	}
+
+	if (name == "sendDone") {
+		state.Red = 0
+		state.Green = 255
+		state.Blue = 0
+	}
+
+
+	return state
+}
+
 func (this *GrabcameraClass) processImage(){
 	scanner := barcode.NewScanner()
 	scanner.SetEnabledAll(false)
@@ -176,11 +290,12 @@ func (this *GrabcameraClass) processImage(){
 	strCurrentBoxBarcode := ""
 	strCurrentStackBarcode := ""
 	
-	//lastCheckMarkList := []structs.CheckMarkList{}
 
-	green := 0
-	red := 0
-	blue := 0
+	currentState := structs.ImageProcessorState{};
+
+
+
+	currentState = this.setState("default",currentState)
 	for {
 		if !this.runVideo {
 			break
@@ -192,22 +307,31 @@ func (this *GrabcameraClass) processImage(){
 		//for range grabVideoCameraTicker.C {	
 		img,ok := <-this.paperChannelImage
 		if ok {
-			if false {
+			if true {
 				log.Println("got image",ok,img.Size(),len(this.paperChannelImage))
 			}
 
+			gocv.Resize(img, &img, image.Point{}, 0.75, 0.75 , gocv.InterpolationLinear)
+			//gocv.IMWrite("sample/sz1.muster.proc.jpg", img)
 //			green = 0
 //			red = 0
 //			blue = 0
 
 			if !img.Empty() {
-
+				gocv.CvtColor(img, &img, gocv.ColorBGRToBGRA)
+				currentState = this.setState("findPaperContour",currentState)
 
 				/*
 				meanStart := time.Now()
 				img_mean := img.Mean()
 				log.Println("Mean: ",time.Since(meanStart),img_mean.Val1)
+				
+				
 				*/
+
+				barcodeTest := img.Clone()
+				
+
 
 				contour := findPaperContour(img)
 				if contour.Size() == 0 {
@@ -217,7 +341,7 @@ func (this *GrabcameraClass) processImage(){
 					approx := gocv.ApproxPolyDP(contour, 0.02*gocv.ArcLength(contour, true), true)
 					
 					if !(approx.Size() >= 4 &&  approx.Size() <= 7) {
-						if false {
+						if true {
 							log.Println("findPaperContour done %s %v",time.Since(start),approx.Size())
 						}
 						approx.Close()
@@ -228,33 +352,46 @@ func (this *GrabcameraClass) processImage(){
 						cornerPoints := getCornerPoints(contour)
 						topLeftCorner := cornerPoints["topLeftCorner"]
 						bottomRightCorner := cornerPoints["bottomRightCorner"]
-						if false {
+						if true {
 							log.Printf("template: %d %d",  bottomRightCorner.X-topLeftCorner.X, bottomRightCorner.Y-topLeftCorner.Y )
 						}
 
 						paper,invM := extractPaper(img, contour, bottomRightCorner.X-topLeftCorner.X, bottomRightCorner.Y-topLeftCorner.Y, cornerPoints)
 						
 						if paper.Empty() {
-							if false {
+							if true {
 								log.Printf("paper empty")
 							}
 							contour.Close()
+
+							cloned := img.Clone()
+							this.imageChannelPaper <- cloned
+							img.Close()
+							
 							img.Close()
 							paper.Close()
 							invM.Close()
 							continue
 						}
 						playGround := paper.Clone()
-						
+						// gocv.IMWrite("playGround.png",playGround)
+
 
 						area := float64(paper.Size()[0]) * float64(paper.Size()[1]) / float64(img.Size()[0]) / float64(img.Size()[1])
 						// log.Println("extractPaper done %s %f",time.Since(start),area)
 						if area > 0.1 {
-							codes := this.findBarcodes(scanner,paper)
-							if false {
+							
+							currentState = this.setState("detectedPaper",currentState)
+
+							codes := this.findBarcodes(scanner,barcodeTest)
+							barcodeTest.Close()
+							if true {
 								log.Println("findBarcodes done %s %v",time.Since(start),codes)
 							}
 							if len(codes) > 0 {
+
+								currentState = this.setState("findBarcodes",currentState)
+
 								for _, code := range codes {
 
 									//fmt.Println("code **",code.Type,code.Data)
@@ -269,6 +406,10 @@ func (this *GrabcameraClass) processImage(){
 											tesseractNeeded = true
 											doFindCircles = false
 											checkMarkList = []structs.CheckMarkList{}
+											debugMarkList = []structs.CheckMarkList{}
+
+											currentState = this.setState("findBoxBarcodes",currentState)
+
 										}
 										if code.Data[0:3]=="FC3" {
 											if len(this.currentStackBarcode) == cap(this.currentStackBarcode) {
@@ -280,6 +421,9 @@ func (this *GrabcameraClass) processImage(){
 											tesseractNeeded = true
 											doFindCircles = false
 											checkMarkList = []structs.CheckMarkList{}
+											debugMarkList = []structs.CheckMarkList{}
+
+											currentState = this.setState("findStackBarcodes",currentState)
 
 										}
 									}
@@ -296,15 +440,17 @@ func (this *GrabcameraClass) processImage(){
 											tesseractNeeded = true
 											doFindCircles = false
 											checkMarkList = []structs.CheckMarkList{}
+											debugMarkList = []structs.CheckMarkList{}
 											
-											green = 0
-											red = 0
-											blue = 255
+								 
+
+											currentState = this.setState("ballotPaperCode",currentState)
+
 										}
 
 										if tesseractNeeded {
 											
-											result := this.tesseract(paper)
+											result := this.tesseract(paper,this.currentOCRChannel)
 											if len(result.PageRois)>0 {
 												tesseractNeeded = false
 												lastTesseractResult = result
@@ -312,14 +458,14 @@ func (this *GrabcameraClass) processImage(){
 												checkMarkList = []structs.CheckMarkList{}
 												debugMarkList = []structs.CheckMarkList{}
 												// fmt.Println("lastTesseractResult **",lastTesseractResult.Title)
-												green = 255
-												red = 255
-												blue = 255
+												 
+
+												currentState = this.setState("ballotPaperDetected",currentState)
+
 
 											}else{
-												green = 100
-												red = 255
-												blue = 100
+												 
+												currentState = this.setState("ballotPaperNotDetected",currentState)
 												fmt.Println("tesseract no bp found")
 											}
 											
@@ -378,9 +524,8 @@ func (this *GrabcameraClass) processImage(){
 														log.Println("res.Marks",res.Marks,listOfRoiIndexes,res.IsCorrect)
 													}
 													//	log.Println("res.Id",lastTesseractResult.PageRois[pRoiIndex].Types[foundIndex].Id)
-													green = 255
-													red = 100
-													blue = 255
+													
+													currentState = this.setState("ballotPaperMarksAnalysed",currentState)
 
 
 													for i := 0; i < len(res.Marks); i++ {
@@ -480,18 +625,16 @@ func (this *GrabcameraClass) processImage(){
 															
 															if err != nil {
 																log.Println("SendReading ERROR",err)
-																green = 0
-																red = 255
-																blue = 0
+																
+																currentState = this.setState("sendError",currentState)
 															}else{
 																// log.Println(">>>>",res.Msg)
 																if res.Success {
 																	doFindCircles = false
 
 
-																	green = 250
-																	red = 0
-																	blue = 0
+																	
+																	currentState = this.setState("sendDone",currentState)
 																}else{
 																	log.Println("SendReading ERROR",res.Msg)
 																}
@@ -504,6 +647,9 @@ func (this *GrabcameraClass) processImage(){
 												 }
 											}
 										}else{
+											// Suchen der Kreise ist nicht mehr notwendig
+											currentState = this.setState("doFindCirclesDone",currentState)
+											//log.Println("doFindCirclesDone",doFindCircles)
 											// green = 50
 											// red = 0
 											// blue = 50
@@ -512,12 +658,16 @@ func (this *GrabcameraClass) processImage(){
 									}
 								}
 								// gocv.IMWrite("paper.png",paper)
+							}else{
+								currentState = this.setState("noBarcodeFound",currentState)
+								checkMarkList = []structs.CheckMarkList{}
+								debugMarkList = []structs.CheckMarkList{}
 							}
 
 						}else{
-							green = 0
-							red = 0
-							blue = 0
+
+							currentState = this.setState("findPaperContourFailed",currentState)
+
 						}
 
 										
@@ -526,8 +676,9 @@ func (this *GrabcameraClass) processImage(){
 						
 						// gocv.Line(&xp, image.Point{0,0}, image.Point{200,img.Rows()},color.RGBA{0,0,255,0}, 20)
 
-						gocv.CvtColor(img, &img, gocv.ColorBGRToBGRA)
+						// gocv.CvtColor(img, &img, gocv.ColorBGRToBGRA)
 
+						/*
 						for i := 0; i < len(debugMarkList); i++ {
 							//playGround
 							if debugMarkList[i].Checked {
@@ -536,32 +687,34 @@ func (this *GrabcameraClass) processImage(){
 								gocv.Circle(&playGround, debugMarkList[i].Point, debugMarkList[i].Pixelsize, color.RGBA{155, 0, 0, 0}, 10)
 							}
 						}
+						*/
 
-						gocv.WarpPerspective(playGround, &img, invM, image.Point{img.Cols(), img.Rows()})
+						// gocv.WarpPerspective(playGround, &img, invM, image.Point{img.Cols(), img.Rows()})
 						
-
-						if !doFindCircles && !tesseractNeeded && !paper.Empty() && (red + green + blue > 0) {
+						fmt.Printf("checkMarkList: %v   \n", checkMarkList )
+						// if !doFindCircles && !tesseractNeeded && !paper.Empty()  {
 							for i := 0; i < len(checkMarkList); i++ {
 								//playGround
 								if checkMarkList[i].Checked {
-									gocv.Circle(&playGround, checkMarkList[i].Point, checkMarkList[i].Pixelsize, color.RGBA{0, 255, 0, 0}, 20)
+									gocv.Circle(&playGround, checkMarkList[i].Point, checkMarkList[i].Pixelsize, color.RGBA{0, 255, 0, 120}, int(3.0*this.pixelScale))
 								}else{
-									gocv.Circle(&playGround, checkMarkList[i].Point, checkMarkList[i].Pixelsize, color.RGBA{255, 0, 0, 0}, 20)
+									gocv.Circle(&playGround, checkMarkList[i].Point, checkMarkList[i].Pixelsize, color.RGBA{255, 0, 0, 120}, int(3.0*this.pixelScale))
 								}
 							}
 
 							gocv.WarpPerspective(playGround, &img, invM, image.Point{img.Cols(), img.Rows()})
 							
 							
-						}
+						// }
 
 						drawContours := gocv.NewPointsVector()
 						drawContours.Append(contour)
 						
 
-						// fmt.Printf("red: %i, green: %i, blue: %i  \n", red,green,blue)
+						fmt.Printf("state: %v   \n", currentState )
 															
-						gocv.DrawContours(&img, drawContours, -1, color.RGBA{uint8(red), uint8(green), uint8(blue), 120}, int(8.0*this.pixelScale))
+						 
+						gocv.DrawContours(&img, drawContours, -1, color.RGBA{uint8(currentState.Red), uint8(currentState.Green), uint8(currentState.Blue), 120}, int(8.0*this.pixelScale))
 						drawContours.Close()
 
 
@@ -574,12 +727,17 @@ func (this *GrabcameraClass) processImage(){
 						contour.Close()
 					}
 				}
+			}else{
+				log.Println("img empty")
 			}
+			log.Println("img ***")
 			if len(this.imageChannelPaper)==cap(this.imageChannelPaper) {
 				mat,_:=<-this.imageChannelPaper
 				mat.Close()
 			}
+
 			cloned := img.Clone()
+			gocv.Resize(cloned, &cloned, image.Point{}, 0.5, 0.5 , gocv.InterpolationLinear)
 			this.imageChannelPaper <- cloned
 			img.Close()
 		}

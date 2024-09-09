@@ -10,6 +10,7 @@ import (
 	"gocv.io/x/gocv"
 	"github.com/agnivade/levenshtein"
 	structs "io.tualo.bp/structs"
+	"log"
 )
 func fileformatBytes(img gocv.Mat) []byte {
 	buffer, err :=gocv.IMEncodeWithParams(gocv.PNGFileExt, img, []int{gocv.IMWriteJpegQuality, 100})
@@ -21,7 +22,7 @@ func fileformatBytes(img gocv.Mat) []byte {
 
 
 
-func (this *GrabcameraClass) tesseract(img gocv.Mat) (structs.TesseractReturnType) {
+func (this *GrabcameraClass) tesseract(img gocv.Mat, currentOCRChannel chan string) (structs.TesseractReturnType) {
 
 	start := time.Now()
 
@@ -100,6 +101,16 @@ func (this *GrabcameraClass) tesseract(img gocv.Mat) (structs.TesseractReturnTyp
 					searchFor += " " +out[j].Word
 				}
 			}
+
+
+			if len(currentOCRChannel)==cap(currentOCRChannel) {
+				txt,_:=<-currentOCRChannel
+				if false {
+					log.Println("OCR",txt)
+				}
+			}
+			currentOCRChannel <- searchFor
+
 			fmt.Println("searchFor %s %d",searchFor , len(documentConfigurations[i].Titles))
 			for j := 0; j < len(documentConfigurations[i].Titles); j++ {
 				distance := levenshtein.ComputeDistance(searchFor, documentConfigurations[i].Titles[j])

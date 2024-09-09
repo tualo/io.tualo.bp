@@ -104,3 +104,16 @@ type BarcodeSymbol struct {
 	Quality int
 	Boundary []image.Point
 }
+
+
+
+
+
+
+type ImageProcessorState struct {
+	Name string
+	Red int
+	Green int
+	Blue int
+	Opacity int
+}

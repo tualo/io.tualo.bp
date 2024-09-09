@@ -8,6 +8,11 @@ export SDK=iphoneos
 # export SDK=iphonesimulator
 go build -buildmode c-archive -o outputfilename.a /path/to/gofile/or/folder
 
+go build -v -a -ldflags="-w -s" \
+    -gcflags=-trimpath=/opt/homebrew/opt/opencv/lib/ \
+    -asmflags=-trimpath=/opt/homebrew/opt/opencv/lib/ \
+    -o ./fooapi spikes/mongoapi.go
+
 # $ export SDK_PATH=`xcrun --sdk $SDK --show-sdk# https://gaitatzis.medium.com/compile-golang-as-a-mobile-library-243e38590f23
 -path`
 # $ export CLANG=`xcrun --sdk $SDK --find clang`
