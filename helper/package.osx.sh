@@ -17,6 +17,9 @@ for i in $list; do
     chmod +x *.dylib
 done
 
+#	<key>NSCameraUsageDescription</key>
+#	<string>Zugriff auf die Kamera um Stimmzettel zu fotografieren.</string>
+
 list=`ls /opt/homebrew/Cellar/opencv/4.10.0_3/lib/*.dylib`
 for i in $list; do
     echo "Fixing $i"
