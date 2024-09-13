@@ -4,7 +4,7 @@ import (
 	"image"
 	"image/color"
 	"gocv.io/x/gocv"
-	"log"
+	// "log"
 )
 
 func (this *GrabcameraClass)  drawBackResults(){
@@ -21,7 +21,7 @@ func (this *GrabcameraClass)  drawBackResults(){
 	gocv.WarpPerspective(this.playGround, &this.img, this.invM, image.Point{this.img.Cols(), this.img.Rows()})
 	drawContours := gocv.NewPointsVector()
 	drawContours.Append(this.contour)
-	log.Println("drawBackResults drawContours",uint8(this.currentState.Red), uint8(this.currentState.Green), uint8(this.currentState.Blue))
+	// log.Println("drawBackResults drawContours",uint8(this.currentState.Red), uint8(this.currentState.Green), uint8(this.currentState.Blue))
 	gocv.DrawContours(&this.img, drawContours, -1, color.RGBA{uint8(this.currentState.Red), uint8(this.currentState.Green), uint8(this.currentState.Blue), 120}, int(8.0*this.pixelScale))
 	drawContours.Close()
 
