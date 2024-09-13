@@ -20,35 +20,37 @@ func (this *GrabcameraClass) processBarcodes(paper gocv.Mat){
 
 			//fmt.Println("code **",code.Type,code.Data)
 			if code.Type == "CODE-39" {
-				if code.Data[0:3]=="FC4" {
-					if len(this.currentBoxBarcode) == cap(this.currentBoxBarcode) {
-						<-this.currentBoxBarcode
+				if len(code.Data) >= 3 {
+					if code.Data[0:3]=="FC4" {
+						if len(this.currentBoxBarcode) == cap(this.currentBoxBarcode) {
+							<-this.currentBoxBarcode
+						}
+						this.currentBoxBarcode <- code.Data
+						this.strCurrentBoxBarcode = code.Data
+
+						this.tesseractNeeded = true
+						this.doFindCircles = false
+						this.checkMarkList = []structs.CheckMarkList{}
+						this.debugMarkList = []structs.CheckMarkList{}
+
+						this.currentState = this.setState("findBoxBarcodes",this.currentState)
+
 					}
-					this.currentBoxBarcode <- code.Data
-					this.strCurrentBoxBarcode = code.Data
+					if code.Data[0:3]=="FC3" {
+						if len(this.currentStackBarcode) == cap(this.currentStackBarcode) {
+							<-this.currentStackBarcode
+						}
+						this.currentStackBarcode <- code.Data
+						this.strCurrentStackBarcode = code.Data
 
-					this.tesseractNeeded = true
-					this.doFindCircles = false
-					this.checkMarkList = []structs.CheckMarkList{}
-					this.debugMarkList = []structs.CheckMarkList{}
+						this.tesseractNeeded = true
+						this.doFindCircles = false
+						this.checkMarkList = []structs.CheckMarkList{}
+						this.debugMarkList = []structs.CheckMarkList{}
 
-					this.currentState = this.setState("findBoxBarcodes",this.currentState)
+						this.currentState = this.setState("findStackBarcodes",this.currentState)
 
-				}
-				if code.Data[0:3]=="FC3" {
-					if len(this.currentStackBarcode) == cap(this.currentStackBarcode) {
-						<-this.currentStackBarcode
 					}
-					this.currentStackBarcode <- code.Data
-					this.strCurrentStackBarcode = code.Data
-
-					this.tesseractNeeded = true
-					this.doFindCircles = false
-					this.checkMarkList = []structs.CheckMarkList{}
-					this.debugMarkList = []structs.CheckMarkList{}
-
-					this.currentState = this.setState("findStackBarcodes",this.currentState)
-
 				}
 			}
 			if code.Type == "CODE-128" {

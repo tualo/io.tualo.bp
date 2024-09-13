@@ -110,7 +110,9 @@ func (this *GrabcameraClass) processMarks(paper gocv.Mat){
 					this.checkMarkList[i].Checked = this.checkMarkList[i].AVG > this.globals.SumMarksAVG
 				}
 
-				if len(this.checkMarkList)>0 && this.checkMarkList[0].Count>6 {
+				log.Println("IsCorrect COUNTER: ",this.checkMarkList[0].Count)
+
+				if len(this.checkMarkList)>0 && this.checkMarkList[0].Count>3 {
 					outList:=[]string{}
 					for i := 0; i < len(this.checkMarkList); i++ {
 						

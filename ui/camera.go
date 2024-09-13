@@ -17,6 +17,12 @@ import (
 	api "io.tualo.bp/api"
 	
 	"log"
+	"os"
+
+
+	"github.com/gopxl/beep"
+	"github.com/gopxl/beep/mp3"
+	"github.com/gopxl/beep/speaker"
 )
 
 type MainScreenClass struct {
@@ -57,6 +63,40 @@ type MainScreenClass struct {
 	ticker *time.Ticker
 	main fyne.CanvasObject
 
+	alert1 beep.StreamSeekCloser
+	alert2 beep.StreamSeekCloser
+	alert3 beep.StreamSeekCloser
+}
+
+func (t *MainScreenClass) initializeSounds() {
+	
+
+}
+
+func (t *MainScreenClass) PlayAlert1() {
+
+	var format beep.Format;
+	
+	f, err := os.Open("assets/sms-alert-1-daniel_simon.mp3")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	t.alert1, format, err = mp3.Decode(f)
+	if err != nil {
+		log.Fatal(err)
+	}
+	if true {
+		log.Println("format",format)
+	}
+	defer t.alert1.Close()
+
+	speaker.Init(format.SampleRate, format.SampleRate.N(time.Second/10))
+	done := make(chan bool)
+	speaker.Play(beep.Seq(t.alert1, beep.Callback(func() {
+		done <- true
+	})))
+	<-done
 }
 
 func (t *MainScreenClass) SetOnLogout(onLogout func()) {
@@ -166,6 +206,11 @@ func (t *MainScreenClass) RedrawImage() {
 					}
 				}
 				if !found {
+					if len(t.historyData)>0 {
+						if (t.historyData[len(t.historyData)-1].State != "sendDone") {
+							t.PlayAlert1()
+						}
+					}
 					t.historyData = append(t.historyData, histItem)
 				}
 
@@ -450,6 +495,8 @@ func NewMainScreenClass() *MainScreenClass {
 		onLogout: nil,
 
 	}
+	o.initializeSounds()
+	o.PlayAlert1()
 
 	
 
