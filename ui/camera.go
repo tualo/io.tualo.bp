@@ -12,17 +12,23 @@ import (
 	"time"
 	// assets "io.tualo.bp/assets"
 	globals "io.tualo.bp/globals"
+	structs "io.tualo.bp/structs"
+	
 	"log"
 )
 
 type MainScreenClass struct {
 	playState bool
 	button *widget.Button
+	informButton *widget.Button
 	globals *globals.GlobalValuesClass
 	fullNameWidget *widget.Label
 	boxLabelWidget *widget.Label
 	stackLabelWidget *widget.Label
 	ballotLabelWidget *widget.Label
+
+	list *widget.List
+	historyData []structs.HistoryListItem
 
 	ocrLabelWidget *widget.Label
 	stateLabelWidget *widget.Label
@@ -42,6 +48,7 @@ type MainScreenClass struct {
 
 	currentStateChannel chan string
 	currentOCRChannel chan string
+	listItemChannel chan structs.HistoryListItem
 
 
 	ticker *time.Ticker
@@ -53,7 +60,7 @@ func (t *MainScreenClass) SetOnLogout(onLogout func()) {
 	t.onLogout = onLogout
 }
 
-func (t *MainScreenClass) SetChannel(channel chan gocv.Mat, boxBarcode chan string, stackBarcode chan string, ballotBarcode chan string, escapedImage chan bool, currentStateChannel chan string, currentOCRChannel chan string) {
+func (t *MainScreenClass) SetChannel(channel chan gocv.Mat, boxBarcode chan string, stackBarcode chan string, ballotBarcode chan string, escapedImage chan bool, currentStateChannel chan string, currentOCRChannel chan string, listItemChannel chan structs.HistoryListItem) {
 	t.channel = channel
 	t.boxBarcode = boxBarcode
 	t.stackBarcode = stackBarcode
@@ -61,6 +68,7 @@ func (t *MainScreenClass) SetChannel(channel chan gocv.Mat, boxBarcode chan stri
 	t.escapedImage = escapedImage
 	t.currentStateChannel = currentStateChannel
 	t.currentOCRChannel = currentOCRChannel
+	t.listItemChannel = listItemChannel
 
 
 }
@@ -111,6 +119,33 @@ func (t *MainScreenClass) RedrawImage() {
 			ocrText,ok6 := <- t.currentOCRChannel
 			if ok6 {
 				t.ocrLabelWidget.SetText("OCR: "+ocrText)
+			}
+		}
+
+		if len(t.listItemChannel)>0 {
+			histItem,ok7 := <- t.listItemChannel
+			if ok7 {
+
+				found:=false
+				for i:=0;i<len(t.historyData);i++ {
+					if t.historyData[i].Barcode == histItem.Barcode {
+						found=true
+						t.historyData[i] = histItem
+						break
+					}
+				}
+				if !found {
+					t.historyData = append(t.historyData, histItem)
+				}
+
+				if len(t.historyData)>15 {
+					t.historyData = t.historyData[1:]
+				}
+
+
+
+				t.list.Refresh()
+				// t.ocrLabelWidget.SetText("OCR: "+histItem)
 			}
 		}
 
@@ -237,10 +272,88 @@ func (this *MainScreenClass) SetGlobals(globals *globals.GlobalValuesClass) {
 }
 
 
+/*
+func (t *MainScreenClass) func make(_ fyne.Window) fyne.CanvasObject {
+	data := make([]string, 1000)
+	for i := range data {
+		data[i] = "Test Item " + strconv.Itoa(i)
+	}
+
+	icon := widget.NewIcon(nil)
+	label := widget.NewLabel("Select An Item From The List")
+	hbox := container.NewHBox(icon, label)
+
+	list := widget.NewList(
+		func() int {
+			return len(data)
+		},
+		func() fyne.CanvasObject {
+			return container.NewHBox(widget.NewIcon(theme.DocumentIcon()), widget.NewLabel("Template Object"))
+		},
+		func(id widget.ListItemID, item fyne.CanvasObject) {
+			if id == 5 || id == 6 {
+				item.(*fyne.Container).Objects[1].(*widget.Label).SetText(data[id] + "\ntaller")
+			} else {
+				item.(*fyne.Container).Objects[1].(*widget.Label).SetText(data[id])
+			}
+		},
+	)
+	list.OnSelected = func(id widget.ListItemID) {
+		label.SetText(data[id])
+		icon.SetResource(theme.DocumentIcon())
+	}
+	list.OnUnselected = func(id widget.ListItemID) {
+		label.SetText("Select An Item From The List")
+		icon.SetResource(nil)
+	}
+	list.Select(125)
+	list.SetItemHeight(5, 50)
+	list.SetItemHeight(6, 50)
+
+	return container.NewHSplit(list, container.NewCenter(hbox))
+}
+	*/
+
+func (t *MainScreenClass) makeLeftContainer()  fyne.CanvasObject {
+	t.informButton = widget.NewButton("Inform", func() {
+		log.Println("Inform")
+	})
+
+
+	t.list = widget.NewList(
+		func() int {
+			return len(t.historyData)
+		},
+		func() fyne.CanvasObject {
+			return container.NewHBox(
+				widget.NewLabel("X"), //widget.NewIcon(theme.DocumentIcon()), 
+				widget.NewLabel("Template Object"),
+			)
+		},
+		func(id widget.ListItemID, item fyne.CanvasObject) {
+			item.(*fyne.Container).Objects[0].(*widget.Label).SetText(t.historyData[id].State)
+			item.(*fyne.Container).Objects[1].(*widget.Label).SetText(t.historyData[id].Barcode)
+		},
+	)
+
+	c:=container.NewBorder(
+		nil, //top
+		t.informButton, // bottom
+		nil, // left
+		nil,  // right
+		t.list, // center
+	)
+
+	return c
+}
 
 func (t *MainScreenClass) makeOuterContainer(onStartStopCamera func()) fyne.CanvasObject {
 	t.button = widget.NewButton("Start/Stop", onStartStopCamera)
 	t.button.SetText("Start")
+
+
+
+
 
 	t.settingsScreenClass = NewSettingsScreenClass()
 	t.settingsScreenClass.SetGlobals( t.globals )
@@ -254,10 +367,9 @@ func (t *MainScreenClass) makeOuterContainer(onStartStopCamera func()) fyne.Canv
 
 	
 	c:=container.NewBorder(
-	//return container.NewBorder(
 		t.makeTopBar( ), 
 		t.button, 
-		nil, 
+		t.makeLeftContainer(), 
 		t.settingsContainer,  
 		t.main,
 	)

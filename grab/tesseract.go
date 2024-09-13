@@ -21,6 +21,34 @@ func fileformatBytes(img gocv.Mat) []byte {
 }
 
 
+func (this *GrabcameraClass) uniqueCharacters(str string) string {
+    charSet := make(map[rune]bool)
+
+    for _, char := range str {
+        charSet[char] = true
+    }
+
+	keys := make([]rune, 0, len(charSet))
+	res:=""
+	for k := range charSet {
+		keys = append(keys, k)
+		if (k>=65 && k<=90) || (k>=97 && k<=122) || (k>=48 && k<=57) {
+			res+=string(k)
+		}
+	}
+
+	return res
+}
+
+func (this *GrabcameraClass) printableCharacters(str string) string {
+	res:=""
+	for _, char := range str {
+		if (char>=65 && char<=90) || (char>=97 && char<=122) || (char>=48 && char<=57) {
+			res+=string(char)
+		}
+	}
+	return res
+}
 
 func (this *GrabcameraClass) tesseract(img gocv.Mat, currentOCRChannel chan string) (structs.TesseractReturnType) {
 
@@ -67,33 +95,44 @@ func (this *GrabcameraClass) tesseract(img gocv.Mat, currentOCRChannel chan stri
 
 		croppedMat := img.Region(image.Rect(X, Y, W+X, H+Y))
 
+		if false {
+
+			gocv.IMWrite(fmt.Sprintf( "tesseract_%d_%d%d.png",i,X,Y), croppedMat)
+		}
+
 		if croppedMat.Empty() {
 			croppedMat.Close()
 			return result
 		}
 
+		whiteListCharactes := ""
+		for j := 0; j < len(documentConfigurations[i].Titles); j++ {
+			whiteListCharactes += documentConfigurations[i].Titles[j]
+		}
+		// log.Println("SetWhitelist",whiteListCharactes)
+		// this.uniqueCharacters(whiteListCharactes)
 
+		// client.SetWhitelist(whiteListCharactes)
+		
 
 		// imgColor := gocv.NewMat()
 		// gocv.CvtColor(croppedMat, &imgColor, gocv.ColorGrayToBGR)
-		// client.SetWhitelist("EinzelhandelEnergie")
+		client.SetWhitelist(this.uniqueCharacters(whiteListCharactes))
 		smaller := this.ResizeMat(croppedMat.Clone(), croppedMat.Cols()/this.globals.TesseractScale, croppedMat.Rows()/this.globals.TesseractScale)
 
 		seterror := client.SetImageFromBytes(fileformatBytes(smaller))
 		if seterror != nil {
-			fmt.Println(seterror)
+			// fmt.Println(seterror)
 			return result
 		}
 		out, herr := client.GetBoundingBoxes(3)
 		if herr != nil {
-			fmt.Println(herr)
+			// fmt.Println(herr)
 			croppedMat.Close()
 			return result
 		}else{
 			if i==0 {	
-				if false {
-					gocv.IMWrite("tesseract.png", croppedMat)
-				}
+				
 			}
 			searchFor:=""
 			if true {
@@ -111,18 +150,18 @@ func (this *GrabcameraClass) tesseract(img gocv.Mat, currentOCRChannel chan stri
 			}
 			currentOCRChannel <- searchFor
 
-			fmt.Println("searchFor %s %d",searchFor , len(documentConfigurations[i].Titles))
+			// fmt.Println("searchFor %s %d",searchFor , len(documentConfigurations[i].Titles))
 			for j := 0; j < len(documentConfigurations[i].Titles); j++ {
-				distance := levenshtein.ComputeDistance(searchFor, documentConfigurations[i].Titles[j])
+				distance := levenshtein.ComputeDistance(searchFor, this.printableCharacters(documentConfigurations[i].Titles[j]))
 				errorRate:=float64(distance) /*- float64(len( documentConfigurations[i].Titles[j])-len(searchFor)))*/ /	float64(len( documentConfigurations[i].Titles[j]))
 
-				if true {
-					fmt.Printf("The distance between:  *%s*  *%s*  is %d %d. \n", 
+				if false {
+					fmt.Printf("The distance between:  *%s*  *%s*  is %d %d. \n %s\n", 
 					searchFor, 
 					documentConfigurations[i].Titles[j], 
 					len( documentConfigurations[i].Titles[j]), 
 					distance,
-
+					this.printableCharacters(documentConfigurations[i].Titles[j]),
 				)
 				/*
 				fmt.Printf("Len diff %.2f\nRatio %.2f\n",

@@ -7,8 +7,11 @@ working_dir="./Scanner.app/Contents/MacOS/"
 executable="io.tualo.bp"
 
 fyne package -os darwin --release
+codesign -s "Apple Development: Thomas Hoffmann (62827QG4CR)" --keychain buildagent --keychain /Users/thomashoffmann/Library/Keychains/login.keychain-db --timestamp --options runtime  Scanner.app
+
 cd $working_dir
 # This script is used to package the application for OSX
+
 list=`otool -L $executable | grep homebrew | awk '{print $1}'`
 for i in $list; do
     echo "Fixing $i"
@@ -18,7 +21,7 @@ for i in $list; do
 done
 
 #	<key>NSCameraUsageDescription</key>
-#	<string>Zugriff auf die Kamera um Stimmzettel zu fotografieren.</string>
+#	<string>Zugriff auf die Kamera, um Stimmzettel zu fotografieren.</string>
 
 list=`ls /opt/homebrew/Cellar/opencv/4.10.0_3/lib/*.dylib`
 for i in $list; do

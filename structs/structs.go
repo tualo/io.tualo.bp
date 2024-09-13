@@ -2,6 +2,7 @@ package structs
 
 import (
 	"image"
+	"image/color"
 	"gocv.io/x/gocv"
 )
 
@@ -116,4 +117,12 @@ type ImageProcessorState struct {
 	Green int
 	Blue int
 	Opacity int
+}
+
+type HistoryListItem struct {
+	Barcode string
+	BoxBarcode string
+	StackBarcode string
+	State string
+	StateColor color.RGBA
 }

@@ -182,6 +182,7 @@ func (this *GrabcameraClass) setState(name string,oldState structs.ImageProcesso
 	this.currentStateChannel <- name
 
 
+
 	if (name == "default") {
 		state.Red = 0
 		state.Green = 0
@@ -271,8 +272,32 @@ func (this *GrabcameraClass) setState(name string,oldState structs.ImageProcesso
 		state.Blue = 0
 	}
 
+	if (name == "isCorrect") {
+		state.Red = 10
+		state.Green = 55
+		state.Blue = 10
+	}
+
 
 	return state
+}
+
+func (this *GrabcameraClass) setHistoryItem(barcode string,boxcode string,stackcode string, currentState structs.ImageProcessorState){
+	histItem := structs.HistoryListItem{
+		Barcode: barcode,
+		BoxBarcode: boxcode,
+		StackBarcode: stackcode,
+		State: currentState.Name,
+		StateColor: color.RGBA{uint8(currentState.Red),uint8(currentState.Green),uint8(currentState.Blue),120},
+	}
+
+	if len(this.listItemChannel)==cap(this.listItemChannel) {
+		oldItem,_:=<-this.listItemChannel
+		if false {
+			log.Println("setState oldItem",oldItem)
+		}
+	}
+	this.listItemChannel <- histItem
 }
 
 func (this *GrabcameraClass) processImage(){
@@ -280,15 +305,13 @@ func (this *GrabcameraClass) processImage(){
 	scanner.SetEnabledAll(false)
 	scanner.SetEnabledSymbology(barcode.Code39,true)
 	scanner.SetEnabledSymbology(barcode.Code128,true)
-	log.Println("processImage starting ")
+	// log.Println("processImage starting ")
 	tesseractNeeded := true
 	lastTesseractResult := structs.TesseractReturnType{}
-	lastBarcode := "wlekfjwuqezgzw"
 	doFindCircles := false
 	checkMarkList := []structs.CheckMarkList{}
 	debugMarkList := []structs.CheckMarkList{}
-	strCurrentBoxBarcode := ""
-	strCurrentStackBarcode := ""
+	
 	
 
 	currentState := structs.ImageProcessorState{};
@@ -307,41 +330,21 @@ func (this *GrabcameraClass) processImage(){
 		//for range grabVideoCameraTicker.C {	
 		img,ok := <-this.paperChannelImage
 		if ok {
-			if true {
+			if false {
 				log.Println("got image",ok,img.Size(),len(this.paperChannelImage))
 			}
-
-			gocv.Resize(img, &img, image.Point{}, 0.75, 0.75 , gocv.InterpolationLinear)
-			//gocv.IMWrite("sample/sz1.muster.proc.jpg", img)
-//			green = 0
-//			red = 0
-//			blue = 0
-
+//			gocv.Resize(img, &img, image.Point{}, 0.75, 0.75 , gocv.InterpolationLinear)
 			if !img.Empty() {
 				gocv.CvtColor(img, &img, gocv.ColorBGRToBGRA)
 				currentState = this.setState("findPaperContour",currentState)
-
-				/*
-				meanStart := time.Now()
-				img_mean := img.Mean()
-				log.Println("Mean: ",time.Since(meanStart),img_mean.Val1)
-				
-				
-				*/
-
 				barcodeTest := img.Clone()
-				
-
-
 				contour := findPaperContour(img)
 				if contour.Size() == 0 {
 					contour.Close()
 				}else{
-				
 					approx := gocv.ApproxPolyDP(contour, 0.02*gocv.ArcLength(contour, true), true)
-					
 					if !(approx.Size() >= 4 &&  approx.Size() <= 7) {
-						if true {
+						if false {
 							log.Println("findPaperContour done %s %v",time.Since(start),approx.Size())
 						}
 						approx.Close()
@@ -352,14 +355,14 @@ func (this *GrabcameraClass) processImage(){
 						cornerPoints := getCornerPoints(contour)
 						topLeftCorner := cornerPoints["topLeftCorner"]
 						bottomRightCorner := cornerPoints["bottomRightCorner"]
-						if true {
+						if false {
 							log.Printf("template: %d %d",  bottomRightCorner.X-topLeftCorner.X, bottomRightCorner.Y-topLeftCorner.Y )
 						}
 
 						paper,invM := extractPaper(img, contour, bottomRightCorner.X-topLeftCorner.X, bottomRightCorner.Y-topLeftCorner.Y, cornerPoints)
 						
 						if paper.Empty() {
-							if true {
+							if false {
 								log.Printf("paper empty")
 							}
 							contour.Close()
@@ -385,7 +388,7 @@ func (this *GrabcameraClass) processImage(){
 
 							codes := this.findBarcodes(scanner,barcodeTest)
 							barcodeTest.Close()
-							if true {
+							if false {
 								log.Println("findBarcodes done %s %v",time.Since(start),codes)
 							}
 							if len(codes) > 0 {
@@ -401,7 +404,7 @@ func (this *GrabcameraClass) processImage(){
 												<-this.currentBoxBarcode
 											}
 											this.currentBoxBarcode <- code.Data
-											strCurrentBoxBarcode = code.Data
+											this.strCurrentBoxBarcode = code.Data
 
 											tesseractNeeded = true
 											doFindCircles = false
@@ -416,7 +419,7 @@ func (this *GrabcameraClass) processImage(){
 												<-this.currentStackBarcode
 											}
 											this.currentStackBarcode <- code.Data
-											strCurrentStackBarcode = code.Data
+											this.strCurrentStackBarcode = code.Data
 
 											tesseractNeeded = true
 											doFindCircles = false
@@ -429,14 +432,13 @@ func (this *GrabcameraClass) processImage(){
 									}
 									if code.Type == "CODE-128" {
 
-										if code.Data != lastBarcode {
-											lastBarcode = code.Data
+										if code.Data != this.lastBarcode {
+											this.lastBarcode = code.Data
 											if len(this.ballotBarcode) == cap(this.ballotBarcode) {
 												<-this.ballotBarcode
 											}
 											this.ballotBarcode <- code.Data
 
-											log.Println(">>>>> RESET code",lastBarcode)
 											tesseractNeeded = true
 											doFindCircles = false
 											checkMarkList = []structs.CheckMarkList{}
@@ -445,6 +447,7 @@ func (this *GrabcameraClass) processImage(){
 								 
 
 											currentState = this.setState("ballotPaperCode",currentState)
+											this.setHistoryItem(code.Data,this.strCurrentBoxBarcode,this.strCurrentStackBarcode,currentState)
 
 										}
 
@@ -503,8 +506,10 @@ func (this *GrabcameraClass) processImage(){
 												}
 											}
 
+											/*
 											log.Println("listOfRoiIndexes",listOfRoiIndexes)
 											log.Println("==================================")
+											*/
 
 											if len(listOfRoiIndexes) >= 1 {
 											/*for pRoiIndex := 0; pRoiIndex < len(listOfRoiIndexes); pRoiIndex++ {
@@ -520,7 +525,7 @@ func (this *GrabcameraClass) processImage(){
 													res := this.processRegionsOfInterest(lastTesseractResult,paper,listOfRoiIndexes)
 
 
-													if true {
+													if false {
 														log.Println("res.Marks",res.Marks,listOfRoiIndexes,res.IsCorrect)
 													}
 													//	log.Println("res.Id",lastTesseractResult.PageRois[pRoiIndex].Types[foundIndex].Id)
@@ -558,6 +563,8 @@ func (this *GrabcameraClass) processImage(){
 													if res.IsCorrect {
 														// log.Println("IsCorrect",res)
 														// lastTesseractResult=res
+														currentState = this.setState("isCorrect",currentState)
+														this.setHistoryItem(code.Data,this.strCurrentBoxBarcode,this.strCurrentStackBarcode,currentState)
 
 														
 														for i := 0; i < len(res.Marks); i++ {
@@ -566,10 +573,12 @@ func (this *GrabcameraClass) processImage(){
 																offestX := int(float64(lastTesseractResult.PageRois[res.Marks[i].RoiIndex].X) * this.pixelScale)	
 																offestY := int(float64(lastTesseractResult.PageRois[res.Marks[i].RoiIndex].Y) * this.pixelScaleY)
 
+																/*
 																fmt.Println("XYZ",
 																	offestX + res.Marks[i].X, 
 																	offestY + res.Marks[i].Y,
 																)
+																*/
 
 																checkMarkList = append(checkMarkList, structs.CheckMarkList{
 																	Point: image.Point{
@@ -599,10 +608,8 @@ func (this *GrabcameraClass) processImage(){
 																	outList = append(outList, "O")
 																}
 															}	
-															res.Barcode = lastBarcode
-															fmt.Printf("Box: %s, Stack: %s, Barcode: %s, Title: %s, List: %v \n",res.BoxBarcode,res.StackBarcode, res.Barcode , lastTesseractResult.Title, outList)
-															//checkMarkList = sumMarks(checkMarkList, res)
-															//lastCheckMarkList = checkMarkList
+															res.Barcode = this.lastBarcode
+
 															b := new(strings.Builder)
 															json.NewEncoder(b).Encode(outList)
 
@@ -615,8 +622,8 @@ func (this *GrabcameraClass) processImage(){
 															image_bytes.Close()
 
 															res,err := api.SendReading(
-																strCurrentBoxBarcode,
-																strCurrentStackBarcode,
+																this.strCurrentBoxBarcode,
+																this.strCurrentStackBarcode,
 																res.Barcode,
 																lastTesseractResult.PageRois[listOfRoiIndexes[0]].Types[foundIndex].Id,
 																b.String(),
@@ -627,6 +634,7 @@ func (this *GrabcameraClass) processImage(){
 																log.Println("SendReading ERROR",err)
 																
 																currentState = this.setState("sendError",currentState)
+																this.setHistoryItem(code.Data,this.strCurrentBoxBarcode,this.strCurrentStackBarcode,currentState)
 															}else{
 																// log.Println(">>>>",res.Msg)
 																if res.Success {
@@ -635,6 +643,7 @@ func (this *GrabcameraClass) processImage(){
 
 																	
 																	currentState = this.setState("sendDone",currentState)
+																	this.setHistoryItem(code.Data,this.strCurrentBoxBarcode,this.strCurrentStackBarcode,currentState)
 																}else{
 																	log.Println("SendReading ERROR",res.Msg)
 																}
@@ -691,7 +700,7 @@ func (this *GrabcameraClass) processImage(){
 
 						// gocv.WarpPerspective(playGround, &img, invM, image.Point{img.Cols(), img.Rows()})
 						
-						fmt.Printf("checkMarkList: %v   \n", checkMarkList )
+						// fmt.Printf("checkMarkList: %v   \n", checkMarkList )
 						// if !doFindCircles && !tesseractNeeded && !paper.Empty()  {
 							for i := 0; i < len(checkMarkList); i++ {
 								//playGround
@@ -709,11 +718,6 @@ func (this *GrabcameraClass) processImage(){
 
 						drawContours := gocv.NewPointsVector()
 						drawContours.Append(contour)
-						
-
-						fmt.Printf("state: %v   \n", currentState )
-															
-						 
 						gocv.DrawContours(&img, drawContours, -1, color.RGBA{uint8(currentState.Red), uint8(currentState.Green), uint8(currentState.Blue), 120}, int(8.0*this.pixelScale))
 						drawContours.Close()
 
@@ -737,7 +741,7 @@ func (this *GrabcameraClass) processImage(){
 			}
 
 			cloned := img.Clone()
-			gocv.Resize(cloned, &cloned, image.Point{}, 0.5, 0.5 , gocv.InterpolationLinear)
+			gocv.Resize(cloned, &cloned, image.Point{}, 0.3, 0.3 , gocv.InterpolationLinear)
 			this.imageChannelPaper <- cloned
 			img.Close()
 		}

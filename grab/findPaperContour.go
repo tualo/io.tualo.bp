@@ -28,7 +28,7 @@ func findPaperContour(img gocv.Mat) gocv.PointVector {
 
 
 
-	// gocv.IMWrite("imgThresh.jpg", imgThresh)
+	gocv.IMWrite("imgThresh.jpg", imgThresh)
 	contours := gocv.FindContours(imgThresh, gocv.RetrievalCComp, gocv.ChainApproxSimple)
 	  
 	maxArea := 0.0

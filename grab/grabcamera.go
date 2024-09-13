@@ -30,7 +30,13 @@ type GrabcameraClass struct {
 	currentOCRChannel chan string
 
 	escapedImage chan bool
+	listItemChannel chan structs.HistoryListItem
 
+
+
+	lastBarcode string
+	strCurrentBoxBarcode string
+	strCurrentStackBarcode string
 	 
 	/*
 	tesseractPrefix string
@@ -218,8 +224,8 @@ func (this *GrabcameraClass) Grabcamera( ) {
 	}
 
 }
-func (this *GrabcameraClass) GetChannel() (chan gocv.Mat, chan string, chan string, chan string, chan bool, chan string, chan string) {
-	return this.imageChannelPaper, this.currentBoxBarcode, this.currentStackBarcode, this.ballotBarcode, this.escapedImage, this.currentStateChannel, this.currentOCRChannel
+func (this *GrabcameraClass) GetChannel() (chan gocv.Mat, chan string, chan string, chan string, chan bool, chan string, chan string, chan structs.HistoryListItem) {
+	return this.imageChannelPaper, this.currentBoxBarcode, this.currentStackBarcode, this.ballotBarcode, this.escapedImage, this.currentStateChannel, this.currentOCRChannel, this.listItemChannel
 }
 
 func NewGrabcameraClass() *GrabcameraClass {
@@ -235,6 +241,9 @@ func NewGrabcameraClass() *GrabcameraClass {
 		currentOCRChannel: make(chan string, 1),
 		currentStackBarcode: make(chan string, 1),
 		ballotBarcode: make(chan string, 1),
+		escapedImage: make(chan bool, 1),
+
+		listItemChannel: make(chan structs.HistoryListItem, 1),
 		loadMuster: false,
 	
 
