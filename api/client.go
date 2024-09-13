@@ -127,3 +127,11 @@ func SendReading( boxbarcode string, stackbarcode string, barcode string, id int
 	
 	return response, err
 }
+
+
+func SendDetectedCodes( boxbarcode string, stackbarcode string, barcode string  ) (KandidatenResponse, error) {
+	var response KandidatenResponse
+	sb,err := Get(systemURL+"papervoteoptical/"+boxbarcode+"/"+stackbarcode+"/"+barcode)
+	json.Unmarshal([]byte(sb), &response)
+	return response, err
+}

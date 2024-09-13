@@ -8,11 +8,13 @@ import (
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/canvas"
 	"image"
+	// "image/color"
 	"gocv.io/x/gocv"
 	"time"
 	// assets "io.tualo.bp/assets"
 	globals "io.tualo.bp/globals"
 	structs "io.tualo.bp/structs"
+	api "io.tualo.bp/api"
 	
 	"log"
 )
@@ -49,6 +51,7 @@ type MainScreenClass struct {
 	currentStateChannel chan string
 	currentOCRChannel chan string
 	listItemChannel chan structs.HistoryListItem
+	detectedCodesChannel chan structs.DetectedCodes
 
 
 	ticker *time.Ticker
@@ -60,7 +63,7 @@ func (t *MainScreenClass) SetOnLogout(onLogout func()) {
 	t.onLogout = onLogout
 }
 
-func (t *MainScreenClass) SetChannel(channel chan gocv.Mat, boxBarcode chan string, stackBarcode chan string, ballotBarcode chan string, escapedImage chan bool, currentStateChannel chan string, currentOCRChannel chan string, listItemChannel chan structs.HistoryListItem) {
+func (t *MainScreenClass) SetChannel(channel chan gocv.Mat, boxBarcode chan string, stackBarcode chan string, ballotBarcode chan string, escapedImage chan bool, currentStateChannel chan string, currentOCRChannel chan string, listItemChannel chan structs.HistoryListItem, detectedCodesChannel chan structs.DetectedCodes) {
 	t.channel = channel
 	t.boxBarcode = boxBarcode
 	t.stackBarcode = stackBarcode
@@ -69,9 +72,37 @@ func (t *MainScreenClass) SetChannel(channel chan gocv.Mat, boxBarcode chan stri
 	t.currentStateChannel = currentStateChannel
 	t.currentOCRChannel = currentOCRChannel
 	t.listItemChannel = listItemChannel
+	t.detectedCodesChannel = detectedCodesChannel
 
 
 }
+
+func (t *MainScreenClass) SendDetectedCodes() {
+	
+
+	for range t.ticker.C {
+
+		if len(t.detectedCodesChannel)>0 {
+			detect,ok1 := <- t.detectedCodesChannel
+			if ok1 {
+				res,err := api.SendDetectedCodes(
+					detect.BoxBarcode,
+					detect.StackBarcode,
+					detect.Barcode,
+				)
+				
+				if err != nil {
+					log.Println("SendDetectedCodes ERROR",err)
+				}else{
+					log.Println("SendDetectedCodes OK",res.Success)
+				}
+			}
+		}
+		
+
+	}
+}
+
 
 func (t *MainScreenClass) RedrawImage() {
 	
@@ -168,6 +199,7 @@ func (t *MainScreenClass) SetPlayState(state bool) {
 		t.button.SetText("Stop")
 		t.ticker = time.NewTicker(1 * time.Millisecond)
 		go t.RedrawImage()
+		go t.SendDetectedCodes()
 	} else {
 		t.ticker.Stop()
 		t.button.SetText("Start")
@@ -318,6 +350,7 @@ func (t *MainScreenClass) makeLeftContainer()  fyne.CanvasObject {
 	t.informButton = widget.NewButton("Inform", func() {
 		log.Println("Inform")
 	})
+	t.informButton.Importance = widget.DangerImportance
 
 
 	t.list = widget.NewList(

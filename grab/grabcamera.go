@@ -8,7 +8,10 @@ import (
 	"image"
 	// "sort"
 	// "image/color"
+	// "gocv.io/x/gocv"
+
 	"gocv.io/x/gocv"
+	"github.com/bieber/barcode"
 	globals "io.tualo.bp/globals"
 	structs "io.tualo.bp/structs"
 )
@@ -37,28 +40,22 @@ type GrabcameraClass struct {
 	lastBarcode string
 	strCurrentBoxBarcode string
 	strCurrentStackBarcode string
+
+	detectedCodesChannel chan structs.DetectedCodes
+
+	scanner *barcode.ImageScanner
+	tesseractNeeded bool
+	lastTesseractResult structs.TesseractReturnType
+	doFindCircles bool
+	checkMarkList []structs.CheckMarkList
+	debugMarkList []structs.CheckMarkList
+	currentState structs.ImageProcessorState
 	 
-	/*
-	tesseractPrefix string
-	intCamera int
-	logGrabcamera bool
-	sumMarksAVG float64
-	forcedCameraWidth int
-	forcedCameraHeight int
-	tesseractScale int
-	dpHoughCircles float64
-	minDist float64
-	thresholdHoughCircles float64
-	accumulatorThresholdHoughCircles float64
-	circleSize int
-	circleMinDistance int
-	gaussianBlurFindCircles int
-	adaptiveThresholdBlockSize int
-	adaptiveThresholdSubtractMean float32
-	meanFindCircles float64
-	innerOverdrawDrawCircles int
-	outerOverdrawDrawCircles int
-	*/
+	paperChannelImageOK  bool
+	img gocv.Mat
+	playGround gocv.Mat
+	contour gocv.PointVector
+	invM gocv.Mat
 
 	onNewImageReady func(chan gocv.Mat)
 }
@@ -224,9 +221,17 @@ func (this *GrabcameraClass) Grabcamera( ) {
 	}
 
 }
-func (this *GrabcameraClass) GetChannel() (chan gocv.Mat, chan string, chan string, chan string, chan bool, chan string, chan string, chan structs.HistoryListItem) {
-	return this.imageChannelPaper, this.currentBoxBarcode, this.currentStackBarcode, this.ballotBarcode, this.escapedImage, this.currentStateChannel, this.currentOCRChannel, this.listItemChannel
-}
+func (this *GrabcameraClass) GetChannel() (
+	chan gocv.Mat, 
+	chan string, 
+	chan string, 
+	chan string, 
+	chan bool, 
+	chan string, 
+	chan string, 
+	chan structs.HistoryListItem, 
+	chan structs.DetectedCodes ) {
+	return this.imageChannelPaper, this.currentBoxBarcode, this.currentStackBarcode, this.ballotBarcode, this.escapedImage, this.currentStateChannel, this.currentOCRChannel, this.listItemChannel, this.detectedCodesChannel}
 
 func NewGrabcameraClass() *GrabcameraClass {
 	o := &GrabcameraClass{
@@ -244,6 +249,7 @@ func NewGrabcameraClass() *GrabcameraClass {
 		escapedImage: make(chan bool, 1),
 
 		listItemChannel: make(chan structs.HistoryListItem, 1),
+		detectedCodesChannel: make(chan structs.DetectedCodes, 100),
 		loadMuster: false,
 	
 

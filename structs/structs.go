@@ -126,3 +126,10 @@ type HistoryListItem struct {
 	State string
 	StateColor color.RGBA
 }
+
+
+type DetectedCodes struct {
+	Barcode string
+	BoxBarcode string
+	StackBarcode string
+}
