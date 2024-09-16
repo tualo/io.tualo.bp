@@ -8,6 +8,15 @@ import (
 )
 
 func (this *GrabcameraClass)  drawBackResults(){
+	for i := 0; i < len(this.debugMarkList); i++ {
+		//playGround
+		if this.debugMarkList[i].Checked {
+			gocv.Circle(&this.playGround, this.debugMarkList[i].Point, this.debugMarkList[i].Pixelsize, color.RGBA{100, 100, 100, 120}, int(1.0*this.pixelScale))
+		}else{
+			gocv.Circle(&this.playGround, this.debugMarkList[i].Point, this.debugMarkList[i].Pixelsize, color.RGBA{100, 100, 100, 120}, int(2.0*this.pixelScale))
+		}
+	}
+	
 	// Drawing back the results
 	for i := 0; i < len(this.checkMarkList); i++ {
 		//playGround
@@ -17,6 +26,9 @@ func (this *GrabcameraClass)  drawBackResults(){
 			gocv.Circle(&this.playGround, this.checkMarkList[i].Point, this.checkMarkList[i].Pixelsize, color.RGBA{255, 0, 0, 120}, int(3.0*this.pixelScale))
 		}
 	}
+
+
+	
 
 	gocv.WarpPerspective(this.playGround, &this.img, this.invM, image.Point{this.img.Cols(), this.img.Rows()})
 	drawContours := gocv.NewPointsVector()

@@ -8,7 +8,7 @@ import (
 	"strings"
 	"encoding/json"
 	"encoding/base64"
-	api "io.tualo.bp/api"
+	//api "io.tualo.bp/api"
 	structs "io.tualo.bp/structs"
 )
 
@@ -110,9 +110,9 @@ func (this *GrabcameraClass) processMarks(paper gocv.Mat){
 					this.checkMarkList[i].Checked = this.checkMarkList[i].AVG > this.globals.SumMarksAVG
 				}
 
-				log.Println("IsCorrect COUNTER: ",this.checkMarkList[0].Count)
+				log.Println("IsCorrect COUNTER: ",this.checkMarkList[0].Count, this.sendNeeded )
 
-				if len(this.checkMarkList)>0 && this.checkMarkList[0].Count>3 {
+				if len(this.checkMarkList)>0 && this.checkMarkList[0].Count>2 {
 					outList:=[]string{}
 					for i := 0; i < len(this.checkMarkList); i++ {
 						
@@ -135,28 +135,18 @@ func (this *GrabcameraClass) processMarks(paper gocv.Mat){
 					//fmt.Println("pic",image_base64[0:100])
 					image_bytes.Close()
 
-					res,err := api.SendReading(
-						this.strCurrentBoxBarcode,
-						this.strCurrentStackBarcode,
-						res.Barcode,
-						this.lastTesseractResult.PageRois[listOfRoiIndexes[0]].Types[foundIndex].Id,
-						b.String(),
-						"data:image/jpeg;base64,"+image_base64,
-					)
-					
-					if err != nil {
-						log.Println("SendReading ERROR",err)
-						this.currentState = this.setState("sendError",this.currentState)
-						this.setHistoryItem(this.lastBarcode,this.strCurrentBoxBarcode,this.strCurrentStackBarcode,this.currentState)
-					}else{
-						if res.Success {
-							this.doFindCircles = false
+					if this.sendNeeded {
+						status := this.sendImageItem(this.strCurrentBoxBarcode,this.strCurrentStackBarcode,res.Barcode,this.lastTesseractResult.PageRois[listOfRoiIndexes[0]].Types[foundIndex].Id,b.String(),"data:image/jpeg;base64,"+image_base64)
+						if status {
+							this.sendNeeded = false
 							this.currentState = this.setState("sendDone",this.currentState)
 							this.setHistoryItem(this.lastBarcode,this.strCurrentBoxBarcode,this.strCurrentStackBarcode,this.currentState)
 						}else{
-							log.Println("SendReading ERROR",res.Msg)
+							this.currentState = this.setState("sendError",this.currentState)
+							this.setHistoryItem(this.lastBarcode,this.strCurrentBoxBarcode,this.strCurrentStackBarcode,this.currentState)
 						}
 					}
+
 
 				}
 			}else{

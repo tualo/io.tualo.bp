@@ -8,7 +8,7 @@ import (
 
 func (this *GrabcameraClass) processPaper( paper gocv.Mat){
 	
-	// gocv.IMWrite("playGround.png",playGround)
+	//gocv.IMWrite("paper.png",paper)
 
 
 	area := float64(paper.Size()[0]) * float64(paper.Size()[1]) / float64(this.img.Size()[0]) / float64(this.img.Size()[1])

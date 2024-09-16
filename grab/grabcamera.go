@@ -42,6 +42,7 @@ type GrabcameraClass struct {
 	strCurrentStackBarcode string
 
 	detectedCodesChannel chan structs.DetectedCodes
+	sendImageQueue chan structs.SendImageQueueItem
 
 	scanner *barcode.ImageScanner
 	tesseractNeeded bool
@@ -58,6 +59,8 @@ type GrabcameraClass struct {
 	invM gocv.Mat
 
 	onNewImageReady func(chan gocv.Mat)
+
+	sendNeeded bool
 }
 
 func (this *GrabcameraClass) SetDocumentConfigurations( conf structs.DocumentConfigurations) {
@@ -230,8 +233,9 @@ func (this *GrabcameraClass) GetChannel() (
 	chan string, 
 	chan string, 
 	chan structs.HistoryListItem, 
-	chan structs.DetectedCodes ) {
-	return this.imageChannelPaper, this.currentBoxBarcode, this.currentStackBarcode, this.ballotBarcode, this.escapedImage, this.currentStateChannel, this.currentOCRChannel, this.listItemChannel, this.detectedCodesChannel}
+	chan structs.DetectedCodes,
+	chan structs.SendImageQueueItem) {
+	return this.imageChannelPaper, this.currentBoxBarcode, this.currentStackBarcode, this.ballotBarcode, this.escapedImage, this.currentStateChannel, this.currentOCRChannel, this.listItemChannel, this.detectedCodesChannel, this.sendImageQueue}
 
 func NewGrabcameraClass() *GrabcameraClass {
 	o := &GrabcameraClass{
@@ -249,7 +253,10 @@ func NewGrabcameraClass() *GrabcameraClass {
 		escapedImage: make(chan bool, 1),
 
 		listItemChannel: make(chan structs.HistoryListItem, 1),
+
 		detectedCodesChannel: make(chan structs.DetectedCodes, 100),
+		sendImageQueue: make(chan structs.SendImageQueueItem, 30),
+
 		loadMuster: false,
 	
 

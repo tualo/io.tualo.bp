@@ -58,6 +58,8 @@ type MainScreenClass struct {
 	currentOCRChannel chan string
 	listItemChannel chan structs.HistoryListItem
 	detectedCodesChannel chan structs.DetectedCodes
+	sendImageQueue chan structs.SendImageQueueItem
+
 
 
 	ticker *time.Ticker
@@ -103,7 +105,18 @@ func (t *MainScreenClass) SetOnLogout(onLogout func()) {
 	t.onLogout = onLogout
 }
 
-func (t *MainScreenClass) SetChannel(channel chan gocv.Mat, boxBarcode chan string, stackBarcode chan string, ballotBarcode chan string, escapedImage chan bool, currentStateChannel chan string, currentOCRChannel chan string, listItemChannel chan structs.HistoryListItem, detectedCodesChannel chan structs.DetectedCodes) {
+func (t *MainScreenClass) SetChannel(
+	channel chan gocv.Mat, 
+	boxBarcode chan string, 
+	stackBarcode chan string, 
+	ballotBarcode chan string, 
+	escapedImage chan bool, 
+	currentStateChannel chan string, 
+	currentOCRChannel chan string, 
+	listItemChannel chan structs.HistoryListItem,
+	detectedCodesChannel chan structs.DetectedCodes,
+	sendImageQueue chan structs.SendImageQueueItem,
+) {
 	t.channel = channel
 	t.boxBarcode = boxBarcode
 	t.stackBarcode = stackBarcode
@@ -113,8 +126,36 @@ func (t *MainScreenClass) SetChannel(channel chan gocv.Mat, boxBarcode chan stri
 	t.currentOCRChannel = currentOCRChannel
 	t.listItemChannel = listItemChannel
 	t.detectedCodesChannel = detectedCodesChannel
+	t.sendImageQueue = sendImageQueue
 
 
+
+}
+
+func (t *MainScreenClass) SendQueuedItems() {
+
+	for range t.ticker.C {
+		if len(t.sendImageQueue)>0 {
+			item,ok1 := <- t.sendImageQueue
+			if ok1 {
+				res,err := api.SendReading(
+					item.BoxBarcode,
+					item.StackBarcode,
+					item.Barcode,
+					item.Id,
+					item.Marks,
+					item.Image,
+				)
+				
+				if err != nil {
+					log.Println("SendReading ERROR",err)
+				}else{
+					log.Println("SendReading OK",res.Success, len(t.sendImageQueue))
+				}
+			}
+		}
+
+	}
 }
 
 func (t *MainScreenClass) SendDetectedCodes() {
@@ -245,6 +286,7 @@ func (t *MainScreenClass) SetPlayState(state bool) {
 		t.ticker = time.NewTicker(1 * time.Millisecond)
 		go t.RedrawImage()
 		go t.SendDetectedCodes()
+		go t.SendQueuedItems()
 	} else {
 		t.ticker.Stop()
 		t.button.SetText("Start")
@@ -495,8 +537,10 @@ func NewMainScreenClass() *MainScreenClass {
 		onLogout: nil,
 
 	}
+	/*
 	o.initializeSounds()
 	o.PlayAlert1()
+	*/
 
 	
 

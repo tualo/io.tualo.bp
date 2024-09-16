@@ -6,6 +6,8 @@ import (
 	"gocv.io/x/gocv"
 )
 
+
+
 func getCornerPoints(contour gocv.PointVector) map[string]image.Point {
 	
 	
@@ -61,6 +63,9 @@ func getCornerPoints(contour gocv.PointVector) map[string]image.Point {
 			
 		}
 	}
+
+
+
 
 	return map[string]image.Point{
 		"topLeftCorner":     topLeftCorner,

@@ -2,6 +2,7 @@ package grab
 
 import (
 	"gocv.io/x/gocv"
+	"fmt"
 )
 
 func (this *GrabcameraClass) processImageChannelData(){
@@ -20,6 +21,9 @@ func (this *GrabcameraClass) processImageChannelData(){
 		}else{
 
 			cornerPoints := getCornerPoints(this.contour)
+			fmt.Println("cornerPoints")
+			fmt.Println(cornerPoints)
+			fmt.Println("====================================")
 			topLeftCorner := cornerPoints["topLeftCorner"]
 			bottomRightCorner := cornerPoints["bottomRightCorner"]
 

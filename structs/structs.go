@@ -133,3 +133,12 @@ type DetectedCodes struct {
 	BoxBarcode string
 	StackBarcode string
 }
+
+type SendImageQueueItem struct {
+	Barcode string
+	BoxBarcode string
+	StackBarcode string
+	Id int
+	Marks string
+	Image string
+}

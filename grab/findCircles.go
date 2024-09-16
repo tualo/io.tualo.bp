@@ -58,7 +58,7 @@ func (this *GrabcameraClass) findCircles(croppedMat gocv.Mat , circleSize int,mi
 
 	this.globals.InnerOverdrawDrawCircles = 2
 
-	log.Println("circles",circleSize, this.globals.InnerOverdrawDrawCircles*int(this.pixelScale), this.globals.GaussianBlurFindCircles/ int(this.pixelScale) )
+	//log.Println("circles",circleSize, this.globals.InnerOverdrawDrawCircles*int(this.pixelScale), this.globals.GaussianBlurFindCircles/ int(this.pixelScale) )
 
 	imgRGray := gocv.NewMat()
 	imgGray := gocv.NewMat()

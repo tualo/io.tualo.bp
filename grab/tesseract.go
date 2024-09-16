@@ -5,6 +5,7 @@ import (
 	"time"
 	"image"
 	"os"
+	"strings"
 	"image/color"
 	"github.com/otiai10/gosseract/v2"
 	"gocv.io/x/gocv"
@@ -141,6 +142,8 @@ func (this *GrabcameraClass) tesseract(img gocv.Mat, currentOCRChannel chan stri
 				}
 			}
 
+			searchFor = this.printableCharacters(searchFor)
+
 
 			if len(currentOCRChannel)==cap(currentOCRChannel) {
 				txt,_:=<-currentOCRChannel
@@ -155,19 +158,20 @@ func (this *GrabcameraClass) tesseract(img gocv.Mat, currentOCRChannel chan stri
 				distance := levenshtein.ComputeDistance(searchFor, this.printableCharacters(documentConfigurations[i].Titles[j]))
 				errorRate:=float64(distance) /*- float64(len( documentConfigurations[i].Titles[j])-len(searchFor)))*/ /	float64(len( documentConfigurations[i].Titles[j]))
 
-				if false {
-					fmt.Printf("The distance between:  *%s*  *%s*  is %d %d. \n %s\n", 
-					searchFor, 
-					documentConfigurations[i].Titles[j], 
-					len( documentConfigurations[i].Titles[j]), 
-					distance,
-					this.printableCharacters(documentConfigurations[i].Titles[j]),
-				)
-				/*
-				fmt.Printf("Len diff %.2f\nRatio %.2f\n",
-					float64(len( documentConfigurations[i].Titles[j])-len(searchFor)),
-					(float64(distance) - float64(len( documentConfigurations[i].Titles[j])-len(searchFor))) /	float64(len( documentConfigurations[i].Titles[j]))			,
-				)*/
+				if true {
+					fmt.Printf("OCR ======== \nSearchFor: *%s*\nTitel:*%s*\nTitelNr:%d\nDistance:%d\nprintChars:%s.\nError:%d\n", 
+						searchFor, 
+						documentConfigurations[i].Titles[j], 
+						len( documentConfigurations[i].Titles[j]), 
+						distance,
+						this.printableCharacters(documentConfigurations[i].Titles[j]),
+						errorRate,
+					)
+			
+				}
+				if strings.Contains(searchFor, this.printableCharacters(documentConfigurations[i].Titles[j])) {
+					fmt.Println("Contains")
+					errorRate=0
 				}
 				if errorRate < 0.3 {
 					result.Title=documentConfigurations[i].Titles[j]

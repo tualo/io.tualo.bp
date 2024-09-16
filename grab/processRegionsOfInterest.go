@@ -33,6 +33,8 @@ func (this *GrabcameraClass) processRegionsOfInterest(tr structs.TesseractReturn
 
 			rect:=image.Rect( X, Y, X+W, Y+H)
 			croppedMat := img.Region(rect)
+
+			
 			
 			if !croppedMat.Empty() {
 				fMarks:=this.findCircles(croppedMat, circleSize,minDist ,useRois[useRoi] )

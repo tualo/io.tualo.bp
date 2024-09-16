@@ -36,6 +36,7 @@ func (this *GrabcameraClass) processImage(){
 	this.debugMarkList = []structs.CheckMarkList{}
 	this.currentState = structs.ImageProcessorState{};
 	this.currentState = this.setState("default",this.currentState)
+	this.sendNeeded = true
 	for {
 		if !this.runVideo {
 			break

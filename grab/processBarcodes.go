@@ -32,6 +32,7 @@ func (this *GrabcameraClass) processBarcodes(paper gocv.Mat){
 						this.doFindCircles = false
 						this.checkMarkList = []structs.CheckMarkList{}
 						this.debugMarkList = []structs.CheckMarkList{}
+						this.sendNeeded = true
 
 						this.currentState = this.setState("findBoxBarcodes",this.currentState)
 
@@ -47,6 +48,7 @@ func (this *GrabcameraClass) processBarcodes(paper gocv.Mat){
 						this.doFindCircles = false
 						this.checkMarkList = []structs.CheckMarkList{}
 						this.debugMarkList = []structs.CheckMarkList{}
+						this.sendNeeded = true
 
 						this.currentState = this.setState("findStackBarcodes",this.currentState)
 
@@ -55,7 +57,7 @@ func (this *GrabcameraClass) processBarcodes(paper gocv.Mat){
 			}
 			if code.Type == "CODE-128" {
 
-				if code.Data != this.lastBarcode {
+				if len(code.Data)>=5 && code.Data != this.lastBarcode {
 					this.lastBarcode = code.Data
 					if len(this.ballotBarcode) == cap(this.ballotBarcode) {
 						<-this.ballotBarcode
@@ -66,7 +68,8 @@ func (this *GrabcameraClass) processBarcodes(paper gocv.Mat){
 					this.doFindCircles = false
 					this.checkMarkList = []structs.CheckMarkList{}
 					this.debugMarkList = []structs.CheckMarkList{}
-						this.currentState = this.setState("ballotPaperCode",this.currentState)
+					this.sendNeeded = true
+					this.currentState = this.setState("ballotPaperCode",this.currentState)
 
 					this.setHistoryItem(code.Data,this.strCurrentBoxBarcode,this.strCurrentStackBarcode,this.currentState)
 					this.pipeDetectedCodes()
@@ -90,6 +93,7 @@ func (this *GrabcameraClass) processBarcodes(paper gocv.Mat){
 		this.currentState = this.setState("noBarcodeFound",this.currentState)
 		this.checkMarkList = []structs.CheckMarkList{}
 		this.debugMarkList = []structs.CheckMarkList{}
+		this.sendNeeded = true
 	}
 
 }
