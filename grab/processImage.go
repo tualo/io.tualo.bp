@@ -69,14 +69,7 @@ func (this *GrabcameraClass) processImage(){
 		}
 			
 
-		/*
-		if len(this.escapedImage)>0 {
-			escapedImage,escapedImageOk := <-this.escapedImage
-			if escapedImageOk {
-				log.Println("EscapedImage",escapedImage)
-
-			}
-		}
-		*/
+		
+		
 	}
 }

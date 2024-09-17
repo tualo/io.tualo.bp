@@ -238,6 +238,9 @@ func (t *MainScreenClass) RedrawImage() {
 			histItem,ok7 := <- t.listItemChannel
 			if ok7 {
 
+				if histItem.State=="escaped" {
+					t.PlayAlert1()
+				}
 				found:=false
 				for i:=0;i<len(t.historyData);i++ {
 					if t.historyData[i].Barcode == histItem.Barcode {
@@ -252,6 +255,7 @@ func (t *MainScreenClass) RedrawImage() {
 							t.PlayAlert1()
 						}
 					}
+					
 					t.historyData = append(t.historyData, histItem)
 				}
 
@@ -418,7 +422,9 @@ func (t *MainScreenClass) func make(_ fyne.Window) fyne.CanvasObject {
 
 func (t *MainScreenClass) makeLeftContainer()  fyne.CanvasObject {
 	t.informButton = widget.NewButton("Inform", func() {
-		log.Println("Inform")
+		if t.GetPlayState() {
+			t.escapedImage <- true
+		}
 	})
 	t.informButton.Importance = widget.DangerImportance
 

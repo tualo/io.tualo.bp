@@ -72,6 +72,9 @@ func (this *GrabcameraClass) processBarcodes(paper gocv.Mat){
 
 					this.setHistoryItem(code.Data,this.strCurrentBoxBarcode,this.strCurrentStackBarcode,this.currentState)
 					this.pipeDetectedCodes()
+
+
+					
 					
 
 				}
