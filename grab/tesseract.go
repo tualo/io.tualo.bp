@@ -33,7 +33,7 @@ func (this *GrabcameraClass) uniqueCharacters(str string) string {
 	res:=""
 	for k := range charSet {
 		keys = append(keys, k)
-		if (k>=65 && k<=90) || (k>=97 && k<=122) || (k>=48 && k<=57) {
+		if (k>=65 && k<=90) || (k>=97 && k<=122) || (k>=48 && k<=57) || (k==252) || (k==246) || (k==228) {
 			res+=string(k)
 		}
 	}
@@ -44,7 +44,7 @@ func (this *GrabcameraClass) uniqueCharacters(str string) string {
 func (this *GrabcameraClass) printableCharacters(str string) string {
 	res:=""
 	for _, char := range str {
-		if (char>=65 && char<=90) || (char>=97 && char<=122) || (char>=48 && char<=57) {
+		if (char>=65 && char<=90) || (char>=97 && char<=122) || (char>=48 && char<=57) || (k==252) || (k==246) || (k==228) {
 			res+=string(char)
 		}
 	}
