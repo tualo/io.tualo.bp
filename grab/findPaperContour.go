@@ -87,12 +87,13 @@ func findPaperContour(img gocv.Mat) gocv.PointVector {
 		}
 	}
 
+	if maxContourIndex != -1 {
+		points := contours.At(maxContourIndex).ToPoints()
 
-	points := contours.At(maxContourIndex).ToPoints()
-
-	for i:=0; i<len(points); i++ {
-		points[i].X *= factor
-		points[i].Y *= factor
+		for i:=0; i<len(points); i++ {
+			points[i].X *= factor
+			points[i].Y *= factor
+		}
 	}
 
 	//contours[maxContourIndex]=gocv.NewPointVectorFromPoints(points)
