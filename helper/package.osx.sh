@@ -7,6 +7,9 @@ working_dir="./Scanner.app/Contents/MacOS/"
 executable="io.tualo.bp"
 
 fyne package -os darwin --release
+mkdir -p "Scanner.app/Contents/MacOS/assets"
+cp assets/*.mp3 "Scanner.app/Contents/MacOS/assets"
+
 codesign -s "Apple Development: Thomas Hoffmann (62827QG4CR)" --keychain buildagent --keychain /Users/thomashoffmann/Library/Keychains/login.keychain-db --timestamp --options runtime  Scanner.app
 
 cd $working_dir

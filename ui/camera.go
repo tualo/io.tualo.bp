@@ -11,15 +11,19 @@ import (
 	"image/color"
 	"gocv.io/x/gocv"
 	"time"
+
 	// assets "io.tualo.bp/assets"
 	globals "io.tualo.bp/globals"
 	structs "io.tualo.bp/structs"
 	api "io.tualo.bp/api"
 	
 	"log"
-	"os"
+	"bytes"
+	"io/ioutil"
+	//"os"
 	"fmt"
 
+	//"fyne.io/fyne/dialog"
 
 	"github.com/gopxl/beep"
 	"github.com/gopxl/beep/mp3"
@@ -79,19 +83,30 @@ func (t *MainScreenClass) initializeSounds() {
 func (t *MainScreenClass) PlayAlert1() {
 
 	var format beep.Format;
+
+
 	
-	f, err := os.Open("assets/sms-alert-1-daniel_simon.mp3")
+	// f, err := os.Open("assets/sms-alert-1-daniel_simon.mp3")
+	/*var file *os.File
+	f, err := file.Read(resourceSmsAlert1DanielsimonMp3.StaticContent)
+	if err != nil {
+		log.Fatal(err)
+	}
+	*/
+	var err error
+
+	buf:=bytes.NewBuffer(resourceSmsAlert1DanielsimonMp3.StaticContent)
+	clsr := ioutil.NopCloser(buf)
+	t.alert1, format, err = mp3.Decode(clsr)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	t.alert1, format, err = mp3.Decode(f)
-	if err != nil {
-		log.Fatal(err)
-	}
 	if true {
 		log.Println("format",format)
 	}
+
+
 	defer t.alert1.Close()
 
 	speaker.Init(format.SampleRate, format.SampleRate.N(time.Second/10))
