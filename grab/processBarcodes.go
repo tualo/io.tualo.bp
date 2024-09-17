@@ -31,6 +31,7 @@ func (this *GrabcameraClass) processBarcodes(paper gocv.Mat){
 						this.doFindCircles = false
 						this.checkMarkList = []structs.CheckMarkList{}
 						this.debugMarkList = []structs.CheckMarkList{}
+						this.currentBallotPaperId = 0
 						this.sendNeeded = true
 
 						this.currentState = this.setState("findBoxBarcodes",this.currentState)
@@ -46,7 +47,9 @@ func (this *GrabcameraClass) processBarcodes(paper gocv.Mat){
 						this.tesseractNeeded = true
 						this.doFindCircles = false
 						this.checkMarkList = []structs.CheckMarkList{}
-						this.debugMarkList = []structs.CheckMarkList{}
+						this.debugMarkList = []structs.CheckMarkList{}						
+						this.currentBallotPaperId = 0
+
 						this.sendNeeded = true
 
 						this.currentState = this.setState("findStackBarcodes",this.currentState)
@@ -66,7 +69,8 @@ func (this *GrabcameraClass) processBarcodes(paper gocv.Mat){
 					this.tesseractNeeded = true
 					this.doFindCircles = false
 					this.checkMarkList = []structs.CheckMarkList{}
-					this.debugMarkList = []structs.CheckMarkList{}
+					this.debugMarkList = []structs.CheckMarkList{}						
+					this.currentBallotPaperId = 0
 					this.sendNeeded = true
 					this.currentState = this.setState("ballotPaperCode",this.currentState)
 
@@ -94,7 +98,8 @@ func (this *GrabcameraClass) processBarcodes(paper gocv.Mat){
 	}else{
 		this.currentState = this.setState("noBarcodeFound",this.currentState)
 		this.checkMarkList = []structs.CheckMarkList{}
-		this.debugMarkList = []structs.CheckMarkList{}
+		this.debugMarkList = []structs.CheckMarkList{}						
+		this.currentBallotPaperId = 0
 		this.sendNeeded = true
 	}
 

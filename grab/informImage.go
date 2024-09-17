@@ -21,7 +21,7 @@ func (this *GrabcameraClass) informImage(paper gocv.Mat){
 				this.strCurrentBoxBarcode,
 				this.strCurrentStackBarcode,
 				this.lastBarcode,
-				0/**/, 
+				this.currentBallotPaperId, 
 				"[]",
 				"data:image/jpeg;base64,"+image_base64,
 			)

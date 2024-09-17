@@ -33,7 +33,8 @@ func (this *GrabcameraClass) processImage(){
 
 	this.lastTesseractResult = structs.TesseractReturnType{}
 	this.checkMarkList = []structs.CheckMarkList{}
-	this.debugMarkList = []structs.CheckMarkList{}
+	this.debugMarkList = []structs.CheckMarkList{}						
+	this.currentBallotPaperId = 0
 	this.currentState = structs.ImageProcessorState{};
 	this.currentState = this.setState("default",this.currentState)
 	this.sendNeeded = true

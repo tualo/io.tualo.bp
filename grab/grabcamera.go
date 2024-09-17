@@ -51,6 +51,8 @@ type GrabcameraClass struct {
 	checkMarkList []structs.CheckMarkList
 	debugMarkList []structs.CheckMarkList
 	currentState structs.ImageProcessorState
+
+	currentBallotPaperId int
 	 
 	paperChannelImageOK  bool
 	img gocv.Mat

@@ -51,6 +51,7 @@ func (this *GrabcameraClass) processMarks(paper gocv.Mat){
 
 			res := this.processRegionsOfInterest(this.lastTesseractResult,paper,listOfRoiIndexes)
 
+			this.currentBallotPaperId = this.lastTesseractResult.PageRois[listOfRoiIndexes[0]].Types[foundIndex].Id
 
 			if false {
 				log.Println("res.Marks",res.Marks,listOfRoiIndexes,res.IsCorrect)
@@ -150,4 +151,6 @@ func (this *GrabcameraClass) processMarks(paper gocv.Mat){
 			}
 		}
 	}
+	this.informImage(paper)
+
 }

@@ -15,7 +15,8 @@ func (this *GrabcameraClass) processTesseract(paper gocv.Mat){
 		this.lastTesseractResult = result
 		this.doFindCircles = true
 		this.checkMarkList = []structs.CheckMarkList{}
-		this.debugMarkList = []structs.CheckMarkList{}
+		this.debugMarkList = []structs.CheckMarkList{}						
+		this.currentBallotPaperId = 0
 		this.sendNeeded = true
 		this.currentState = this.setState("ballotPaperDetected",this.currentState)
 
