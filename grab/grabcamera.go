@@ -151,8 +151,8 @@ func (this *GrabcameraClass) Grabcamera() {
 			webcam.Set(gocv.VideoCaptureFrameHeight, float64(this.globals.ForcedCameraHeight))
 		}
 
-		//webcam.Set(gocv.VideoCaptureFrameWidth, webcam.Get(gocv.VideoCaptureFrameWidth) / 2)
-		//webcam.Set(gocv.VideoCaptureFrameHeight, webcam.Get(gocv.VideoCaptureFrameHeight) / 2)
+		webcam.Set(gocv.VideoCaptureFrameWidth, webcam.Get(gocv.VideoCaptureFrameWidth)/2)
+		webcam.Set(gocv.VideoCaptureFrameHeight, webcam.Get(gocv.VideoCaptureFrameHeight)/2)
 		//webcam.Set(gocv.VideoCaptureFrameWidth, 4608/2)
 		//webcam.Set(gocv.VideoCaptureFrameHeight, 3456/2)
 

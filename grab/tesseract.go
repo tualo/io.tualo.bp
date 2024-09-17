@@ -2,39 +2,40 @@ package grab
 
 import (
 	"fmt"
-	"time"
 	"image"
+	"image/color"
+	"log"
 	"os"
 	"strings"
-	"image/color"
+	"time"
+
+	"github.com/agnivade/levenshtein"
 	"github.com/otiai10/gosseract/v2"
 	"gocv.io/x/gocv"
-	"github.com/agnivade/levenshtein"
 	structs "io.tualo.bp/structs"
-	"log"
 )
+
 func fileformatBytes(img gocv.Mat) []byte {
-	buffer, err :=gocv.IMEncodeWithParams(gocv.PNGFileExt, img, []int{gocv.IMWriteJpegQuality, 100})
+	buffer, err := gocv.IMEncodeWithParams(gocv.PNGFileExt, img, []int{gocv.IMWriteJpegQuality, 100})
 	if err != nil {
 		return nil
 	}
-	return buffer.GetBytes(	)
+	return buffer.GetBytes()
 }
 
-
 func (this *GrabcameraClass) uniqueCharacters(str string) string {
-    charSet := make(map[rune]bool)
+	charSet := make(map[rune]bool)
 
-    for _, char := range str {
-        charSet[char] = true
-    }
+	for _, char := range str {
+		charSet[char] = true
+	}
 
 	keys := make([]rune, 0, len(charSet))
-	res:=""
+	res := ""
 	for k := range charSet {
 		keys = append(keys, k)
-		if (k>=65 && k<=90) || (k>=97 && k<=122) || (k>=48 && k<=57) || (k==252) || (k==246) || (k==228) {
-			res+=string(k)
+		if (k >= 65 && k <= 90) || (k >= 97 && k <= 122) || (k >= 48 && k <= 57) || (k == 252) || (k == 246) || (k == 228) {
+			res += string(k)
 		}
 	}
 
@@ -42,31 +43,29 @@ func (this *GrabcameraClass) uniqueCharacters(str string) string {
 }
 
 func (this *GrabcameraClass) printableCharacters(str string) string {
-	res:=""
+	res := ""
 	for _, char := range str {
-		if (char>=65 && char<=90) || (char>=97 && char<=122) || (char>=48 && char<=57) || (char==252) || (char==246) || (char==228) {
-			res+=string(char)
+		if (char >= 65 && char <= 90) || (char >= 97 && char <= 122) || (char >= 48 && char <= 57) || (char == 252) || (char == 246) || (char == 228) {
+			res += string(char)
 		}
 	}
 	return res
 }
 
-func (this *GrabcameraClass) tesseract(img gocv.Mat, currentOCRChannel chan string) (structs.TesseractReturnType) {
+func (this *GrabcameraClass) tesseract(img gocv.Mat, currentOCRChannel chan string) structs.TesseractReturnType {
 
 	start := time.Now()
 
+	result := structs.TesseractReturnType{}
+	result.Point = image.Point{0, 0}
+	result.Title = ""
+	result.IsCorrect = false
+	result.PageRois = []structs.DocumentConfigurationPageRoi{}
+	result.Pagesize = structs.DocumentConfigurationPageSize{}
+	result.CircleSize = 1
+	result.CircleMinDistance = 100
+	result.Marks = []structs.CheckMarks{}
 
-
-	result:=structs.TesseractReturnType{}
-	result.Point=image.Point{0,	0}
-	result.Title=""
-	result.IsCorrect=false
-	result.PageRois=[]structs.DocumentConfigurationPageRoi{}
-	result.Pagesize=structs.DocumentConfigurationPageSize{}
-	result.CircleSize=1
-	result.CircleMinDistance=100
-	result.Marks=[]structs.CheckMarks{}
-	
 	client := gosseract.NewClient()
 	defer client.Close()
 
@@ -77,15 +76,11 @@ func (this *GrabcameraClass) tesseract(img gocv.Mat, currentOCRChannel chan stri
 
 	documentConfigurations := this.documentConfigurations
 
-
 	for i := 0; i < len(documentConfigurations); i++ {
-		
 
-		result.CircleSize=documentConfigurations[i].CircleSize
-		result.CircleMinDistance=documentConfigurations[i].CircleMinDistance
-		result.Pagesize=documentConfigurations[i].Pagesize
-		
-
+		result.CircleSize = documentConfigurations[i].CircleSize
+		result.CircleMinDistance = documentConfigurations[i].CircleMinDistance
+		result.Pagesize = documentConfigurations[i].Pagesize
 
 		X := documentConfigurations[i].TitleRegion.X * img.Cols() / result.Pagesize.Width
 		Y := documentConfigurations[i].TitleRegion.Y * img.Rows() / result.Pagesize.Height
@@ -95,8 +90,7 @@ func (this *GrabcameraClass) tesseract(img gocv.Mat, currentOCRChannel chan stri
 		croppedMat := img.Region(image.Rect(X, Y, W+X, H+Y))
 
 		if false {
-
-			gocv.IMWrite(fmt.Sprintf( "tesseract_%d_%d%d.png",i,X,Y), croppedMat)
+			gocv.IMWrite(fmt.Sprintf("tesseract_%d_%d%d.png", i, X, Y), croppedMat)
 		}
 
 		if croppedMat.Empty() {
@@ -112,7 +106,6 @@ func (this *GrabcameraClass) tesseract(img gocv.Mat, currentOCRChannel chan stri
 		// this.uniqueCharacters(whiteListCharactes)
 
 		// client.SetWhitelist(whiteListCharactes)
-		
 
 		// imgColor := gocv.NewMat()
 		// gocv.CvtColor(croppedMat, &imgColor, gocv.ColorGrayToBGR)
@@ -129,24 +122,23 @@ func (this *GrabcameraClass) tesseract(img gocv.Mat, currentOCRChannel chan stri
 			// fmt.Println(herr)
 			croppedMat.Close()
 			return result
-		}else{
-			if i==0 {	
-				
+		} else {
+			if i == 0 {
+
 			}
-			searchFor:=""
+			searchFor := ""
 			if true {
 				for j := 0; j < len(out); j++ {
-					searchFor += " " +out[j].Word
+					searchFor += " " + out[j].Word
 				}
 			}
 
 			searchFor = this.printableCharacters(searchFor)
 
-
-			if len(currentOCRChannel)==cap(currentOCRChannel) {
-				txt,_:=<-currentOCRChannel
+			if len(currentOCRChannel) == cap(currentOCRChannel) {
+				txt, _ := <-currentOCRChannel
 				if false {
-					log.Println("OCR",txt)
+					log.Println("OCR", txt)
 				}
 			}
 			currentOCRChannel <- searchFor
@@ -154,31 +146,29 @@ func (this *GrabcameraClass) tesseract(img gocv.Mat, currentOCRChannel chan stri
 			// fmt.Println("searchFor %s %d",searchFor , len(documentConfigurations[i].Titles))
 			for j := 0; j < len(documentConfigurations[i].Titles); j++ {
 				distance := levenshtein.ComputeDistance(searchFor, this.printableCharacters(documentConfigurations[i].Titles[j]))
-				errorRate:=float64(distance) /*- float64(len( documentConfigurations[i].Titles[j])-len(searchFor)))*/ /	float64(len( documentConfigurations[i].Titles[j]))
+				errorRate := float64(distance) /*- float64(len( documentConfigurations[i].Titles[j])-len(searchFor)))*/ / float64(len(documentConfigurations[i].Titles[j]))
 
-				
 				if strings.Contains(searchFor, this.printableCharacters(documentConfigurations[i].Titles[j])) {
-					errorRate=0
+					errorRate = 0
 				}
 				if errorRate < 0.3 {
-					result.Title=documentConfigurations[i].Titles[j]
-					
+					result.Title = documentConfigurations[i].Titles[j]
+
 					//title = out[0].Word
 					drawContours := gocv.NewPointsVector()
-					contour:= gocv.NewPointVectorFromPoints([]image.Point{
+					contour := gocv.NewPointVectorFromPoints([]image.Point{
 						out[0].Box.Min,
 						image.Point{out[0].Box.Max.X, out[0].Box.Min.Y},
 						out[0].Box.Max,
-						image.Point{out[0].Box.Min.X, out[0].Box.Max.Y} 			})
+						image.Point{out[0].Box.Min.X, out[0].Box.Max.Y}})
 					drawContours.Append(contour)
 					gocv.DrawContours(&croppedMat, drawContours, -1, color.RGBA{0, 255, 0, 0}, 2)
 					result.Point = image.Point{documentConfigurations[i].TitleRegion.X, documentConfigurations[i].TitleRegion.Y}
 
-					
 					if false {
-						fmt.Sprintf("ocr %s %d %d %d",time.Since(start),croppedMat.Cols(),croppedMat.Rows(), os.Getpid() ) 
+						fmt.Sprintf("ocr %s %d %d %d", time.Since(start), croppedMat.Cols(), croppedMat.Rows(), os.Getpid())
 					}
-					result.PageRois=documentConfigurations[i].Rois
+					result.PageRois = documentConfigurations[i].Rois
 					croppedMat.Close()
 					drawContours.Close()
 					smaller.Close()
@@ -187,8 +177,6 @@ func (this *GrabcameraClass) tesseract(img gocv.Mat, currentOCRChannel chan stri
 
 			}
 
-			
-		
 		}
 		croppedMat.Close()
 		smaller.Close()
