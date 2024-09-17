@@ -4,14 +4,16 @@ go 1.22.0
 
 require (
 	fyne.io/fyne/v2 v2.4.5
+	github.com/agnivade/levenshtein v1.1.1
 	github.com/bieber/barcode v0.0.0-20230820185446-2e682506f5b4
+	github.com/gopxl/beep v1.4.1
+	github.com/otiai10/gosseract/v2 v2.4.1
 	gocv.io/x/gocv v0.36.1
 	gopkg.in/ini.v1 v1.67.0
 )
 
 require (
 	fyne.io/systray v1.10.1-0.20231115130155-104f5ef7839e // indirect
-	github.com/agnivade/levenshtein v1.1.1 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/ebitengine/oto/v3 v3.1.0 // indirect
 	github.com/ebitengine/purego v0.7.1 // indirect
@@ -26,10 +28,8 @@ require (
 	github.com/go-text/typesetting v0.1.0 // indirect
 	github.com/godbus/dbus/v5 v5.1.0 // indirect
 	github.com/gopherjs/gopherjs v1.17.2 // indirect
-	github.com/gopxl/beep v1.4.1 // indirect
 	github.com/hajimehoshi/go-mp3 v0.3.4 // indirect
 	github.com/jsummers/gobmp v0.0.0-20151104160322-e2ba15ffa76e // indirect
-	github.com/otiai10/gosseract/v2 v2.4.1 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/srwiley/oksvg v0.0.0-20221011165216-be6e8873101c // indirect

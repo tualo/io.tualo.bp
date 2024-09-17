@@ -21,23 +21,120 @@ func calculateBestThresh(img gocv.Mat) float32 {
 	return float32(max_val)*0.9
 }
 
+
+
 func findPaperContour(img gocv.Mat) gocv.PointVector {
+
+	factor := 1
+
+	scaled := gocv.NewMat()
+	// Merge the channels back together
+	merged:= gocv.NewMat()
+
+	gocv.Resize(img, &scaled, image.Point{img.Cols() / factor, img.Rows() / factor}, 0, 0, gocv.InterpolationArea)
+	blur := gocv.NewMat()
+	gocv.GaussianBlur(scaled, &blur, image.Pt(83, 83), 1, 1, gocv.BorderDefault)
+
+	
+	channels := gocv.Split(scaled)
+	countChannels := len(channels)
+	if countChannels > 3 {
+		countChannels = 3
+	}
+	for i := 0; i < countChannels; i++ {
+		eroded := gocv.NewMat()
+		kernel := gocv.Ones(5, 5, gocv.MatTypeCV8U)
+		gocv.MorphologyExWithParams(channels[i], &eroded, gocv.MorphErode, kernel, 3, gocv.BorderDefault)
+		d := gocv.NewMat()
+		imgThresh := gocv.NewMat()
+
+
+		gocv.Dilate(channels[i],&d,gocv.GetStructuringElement(gocv.MorphEllipse, image.Pt(3, 3)))
+		gocv.Threshold(d, &imgThresh, 100, 255, gocv.ThresholdBinary +gocv.ThresholdOtsu ) 
+		gocv.Erode(imgThresh,&imgThresh,gocv.GetStructuringElement(gocv.MorphEllipse, image.Pt(5, 5)))
+	
+		gocv.Dilate(imgThresh,&imgThresh,gocv.GetStructuringElement(gocv.MorphEllipse, image.Pt(33, 33)))
+
+		channels[i].Close()
+		channels[i]=imgThresh.Clone()
+
+		eroded.Close()
+		kernel.Close()
+		d.Close()
+		imgThresh.Close()
+
+	}
+
+
+	gocv.Add(channels[0], channels[1], &merged)
+	gocv.Add(merged, channels[2], &merged)
+	gocv.Threshold(merged, &merged, 100, 255, gocv.ThresholdBinary +gocv.ThresholdOtsu ) 
+
+	
+	contours := gocv.FindContours(merged, gocv.RetrievalCComp, gocv.ChainApproxSimple)
+	  
+	maxArea := 0.0
+	maxContourIndex := -1
+	for i := 0; i < contours.Size(); i++ {
+		contourArea := gocv.ContourArea(contours.At(i))
+		if contourArea > maxArea {
+			maxArea = contourArea
+			maxContourIndex = i
+		}
+	}
+
+
+	points := contours.At(maxContourIndex).ToPoints()
+
+	for i:=0; i<len(points); i++ {
+		points[i].X *= factor
+		points[i].Y *= factor
+	}
+
+	//contours[maxContourIndex]=gocv.NewPointVectorFromPoints(points)
+
+	for i:=0; i<len(channels); i++ {
+		channels[i].Close()
+	}
+	scaled.Close()
+	blur.Close()
+	merged.Close()
+	contours.Close()
+
+
+	if maxContourIndex == -1 {
+		
+		return gocv.NewPointVector()
+		
+	}
+	return gocv.NewPointVectorFromPoints(points)
+
+
+
+}
+
+
+
+func findPaperContour16092024(img gocv.Mat) gocv.PointVector {
 	var thresh float32
 
-	factor:=2
+	factor:=4
 	imgGray := gocv.NewMat()
 	imgBlur := gocv.NewMat()
 	imgThresh := gocv.NewMat()
 
 	scaled := gocv.NewMat()
-	gocv.Resize(img, &scaled, image.Point{img.Cols() / factor, img.Rows() / factor}, 0, 0, gocv.InterpolationArea)
+	gocv.Resize(img, &scaled, image.Point{img.Cols() / factor, img.Rows() / factor}, 0, 0, gocv.InterpolationLanczos4)
+	// gocv.GaussianBlur(scaled, &imgBlur, image.Point{85, 85}, 0, 0, gocv.BorderDefault)
 	gocv.CvtColor(scaled, &imgGray, gocv.ColorBGRToGray)
 	  
 	
 	thresh = calculateBestThresh(imgGray)
-	gocv.Threshold(imgGray, &imgGray, thresh , 255 , gocv.ThresholdBinary    ) 
+	gocv.Threshold(imgGray, &imgThresh, thresh , 255 , gocv.ThresholdBinary  /* +gocv.ThresholdOtsu */ ) 
+	//gocv.GaussianBlur(imgThresh, &imgBlur, image.Point{5, 5}, 0, 0, gocv.BorderDefault)
 
-	contours := gocv.FindContours(imgGray, gocv.RetrievalCComp, gocv.ChainApproxSimple)
+	//contours := gocv.FindContours(imgGray, gocv.RetrievalCComp, gocv.ChainApproxSimple)
+	contours := gocv.FindContours(imgThresh, gocv.RetrievalList, gocv.ChainApproxTC89KCOS)
 	  
 	maxArea := 0.0
 	maxContourIndex := -1
