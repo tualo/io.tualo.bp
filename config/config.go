@@ -108,7 +108,7 @@ func (this *ConfigurationClass) Set(section string, key string,value string) {
 	if this.loaded {
 		if section == "credentials" && key == "password" {
 			str,_:=Encrypt(value,mySecret)
-			log.Println("------",str,mySecret,value)
+			// log.Println("------",str,mySecret,value)
 			this.cfg.Section(section).Key(key).SetValue(str)
 		}else{
 			this.cfg.Section(section).Key(key).SetValue(value)

@@ -300,24 +300,7 @@ func (t *MainScreenClass) matToImage(mat gocv.Mat) image.Image {
 
 
 func (t *MainScreenClass) makeMain() fyne.CanvasObject {
-
-/*
-	
-	f, oserr := os.Open("asset/Image.png")
-	if oserr != nil {
-		fmt.Println(oserr)
-		//os.Exit(1)
-	}else{
-		defer f.Close()
-
-		g, decodeerr := png.Decode(f)
-		if decodeerr != nil {
-			fmt.Println(decodeerr)
-			//os.Exit(1)
-		}
-		t.displayImage = canvas.NewImageFromImage(g)
-	}
-	*/
+ 
 	t.displayImage  =  canvas.NewImageFromImage(t.matToImage(gocv.NewMatWithSize(640, 480, gocv.MatTypeCV8UC3)))
 	//canvas.NewImageFromResource(assets.Image())	
 	

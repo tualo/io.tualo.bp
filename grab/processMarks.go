@@ -2,7 +2,7 @@ package grab
 
 import (
 	"gocv.io/x/gocv"
-	"fmt"
+	//"fmt"
 	"log"
 	"image"
 	"strings"
@@ -66,10 +66,6 @@ func (this *GrabcameraClass) processMarks(paper gocv.Mat){
 					offestX := int(float64(this.lastTesseractResult.PageRois[res.Marks[i].RoiIndex].X) * this.pixelScale)	
 					offestY := int(float64(this.lastTesseractResult.PageRois[res.Marks[i].RoiIndex].Y) * this.pixelScaleY)
 
-					fmt.Println("XYZ",
-						offestX + res.Marks[i].X, 
-						offestY + res.Marks[i].Y,
-					)
 
 					this.debugMarkList = append(this.debugMarkList, structs.CheckMarkList{
 						Point: image.Point{

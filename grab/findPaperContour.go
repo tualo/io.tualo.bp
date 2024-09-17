@@ -25,15 +25,19 @@ func calculateBestThresh(img gocv.Mat) float32 {
 
 func findPaperContour(img gocv.Mat) gocv.PointVector {
 
-	factor := 1
+	factor := 12
+	//vig:=gocv.IMRead("vig.png",gocv.IMReadColor)
 
 	scaled := gocv.NewMat()
+	//X := gocv.NewMat()
 	// Merge the channels back together
 	merged:= gocv.NewMat()
 
+	//gocv.Add(img, vig, &X)
+
 	gocv.Resize(img, &scaled, image.Point{img.Cols() / factor, img.Rows() / factor}, 0, 0, gocv.InterpolationArea)
 	blur := gocv.NewMat()
-	gocv.GaussianBlur(scaled, &blur, image.Pt(83, 83), 1, 1, gocv.BorderDefault)
+	gocv.GaussianBlur(scaled, &blur, image.Pt(3, 3), 1, 1, gocv.BorderDefault)
 
 	
 	channels := gocv.Split(scaled)
@@ -53,7 +57,7 @@ func findPaperContour(img gocv.Mat) gocv.PointVector {
 		gocv.Threshold(d, &imgThresh, 100, 255, gocv.ThresholdBinary +gocv.ThresholdOtsu ) 
 		gocv.Erode(imgThresh,&imgThresh,gocv.GetStructuringElement(gocv.MorphEllipse, image.Pt(5, 5)))
 	
-		gocv.Dilate(imgThresh,&imgThresh,gocv.GetStructuringElement(gocv.MorphEllipse, image.Pt(33, 33)))
+		gocv.Dilate(imgThresh,&imgThresh,gocv.GetStructuringElement(gocv.MorphEllipse, image.Pt(3, 3)))
 
 		channels[i].Close()
 		channels[i]=imgThresh.Clone()
@@ -186,19 +190,7 @@ func findPaperContourChannels(img gocv.Mat) gocv.PointVector {
 
 
 	channels := gocv.Split(scaled)
-
-	/*
-	mean := gocv.NewMat()
-	stddev := gocv.NewMat()
-
-	gocv.MeanStdDev(channels[0], &mean, &stddev)
-	fmt.Println("1) mean: ", mean.GetFloatAt(0, 0), "stddev: ", stddev.GetFloatAt(0, 0))
-	gocv.MeanStdDev(channels[1], &mean, &stddev)
-	fmt.Println("2) mean: ", mean.GetFloatAt(0, 0), "stddev: ", stddev.GetFloatAt(0, 0))
-	gocv.MeanStdDev(channels[2], &mean, &stddev)
-	fmt.Println("3) mean: ", mean , "stddev: ", stddev )
-	*/
-
+ 
 
 	thresh = calculateBestThresh(channels[0])
 	gocv.GaussianBlur(channels[0], &channels[0], image.Point{15, 15}, 0, 0, gocv.BorderDefault)
@@ -221,22 +213,6 @@ func findPaperContourChannels(img gocv.Mat) gocv.PointVector {
 	//gocv.IMWrite("channels2.jpg", channels[2])
 
 
-	/*
-	var s float32
-	s =0
-	bytes := channels[0].ToBytes()
-	for _, b := range bytes {
-		s+=float32(b)
-	}
-	fmt.Println("sum: ", s, "len: ", len(bytes), "mean: ", s/float32(len(bytes)))
-	*/
-
-
-
-	 /*
-	gocv.Merge([]gocv.Mat{channels[0], channels[1], channels[2]}, &chanIMG)
-	gocv.IMWrite("chanIMG.jpg",chanIMG)
-	*/
 
 	gocv.Add(channels[0], channels[1], &chanIMGM)
 	gocv.Add(chanIMGM, channels[2], &chanIMGM)

@@ -77,9 +77,7 @@ func (this *GrabcameraClass) tesseract(img gocv.Mat, currentOCRChannel chan stri
 
 	documentConfigurations := this.documentConfigurations
 
-	if false {
-		fmt.Println("tesseract",documentConfigurations, img.Cols(), img.Rows())
-	}
+
 	for i := 0; i < len(documentConfigurations); i++ {
 		
 
@@ -158,19 +156,8 @@ func (this *GrabcameraClass) tesseract(img gocv.Mat, currentOCRChannel chan stri
 				distance := levenshtein.ComputeDistance(searchFor, this.printableCharacters(documentConfigurations[i].Titles[j]))
 				errorRate:=float64(distance) /*- float64(len( documentConfigurations[i].Titles[j])-len(searchFor)))*/ /	float64(len( documentConfigurations[i].Titles[j]))
 
-				if true {
-					fmt.Printf("OCR ======== \nSearchFor: *%s*\nTitel:*%s*\nTitelNr:%d\nDistance:%d\nprintChars:%s.\nError:%d\n", 
-						searchFor, 
-						documentConfigurations[i].Titles[j], 
-						len( documentConfigurations[i].Titles[j]), 
-						distance,
-						this.printableCharacters(documentConfigurations[i].Titles[j]),
-						errorRate,
-					)
-			
-				}
+				
 				if strings.Contains(searchFor, this.printableCharacters(documentConfigurations[i].Titles[j])) {
-					fmt.Println("Contains")
 					errorRate=0
 				}
 				if errorRate < 0.3 {

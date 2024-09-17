@@ -37,10 +37,10 @@ func (this *SettingsScreenClass) SetGlobals(globals *globals.GlobalValuesClass) 
 func (this *SettingsScreenClass) makeSettingsForm() fyne.CanvasObject {
 
 	cameraList := this.grabber.GetCameraList()
-	fmt.Println("maxcameranum",len(cameraList))	
+	// fmt.Println("maxcameranum",len(cameraList))	
 	//"Camera 1", "Camera 2", "Camera 3", "Camera 4"
 	this.cameraSelectWidget = widget.NewSelect([]string{},func(value string) {
-		fmt.Println("cameraSelectWidget",value)
+		// fmt.Println("cameraSelectWidget",value)
 		for i:=0;i<len(cameraList);i++ {
 			if value == fmt.Sprintf("Camera %d (%dx%d)",(i+1),cameraList[i].Width,cameraList[i].Height) {
 				this.globals.IntCamera = i
@@ -51,7 +51,7 @@ func (this *SettingsScreenClass) makeSettingsForm() fyne.CanvasObject {
 		this.cameraSelectWidget.Options = append(this.cameraSelectWidget.Options,fmt.Sprintf("Camera %d (%dx%d)",(i+1),cameraList[i].Width,cameraList[i].Height))
 	}
 	this.cameraSelectWidget.PlaceHolder = "Bitte wählen Sie eine Kamera aus"
-	fmt.Println("cameraSelectWidget",this.cameraSelectWidget.Options,cameraList,this.globals.IntCamera)
+	// fmt.Println("cameraSelectWidget",this.cameraSelectWidget.Options,cameraList,this.globals.IntCamera)
 	if this.globals.IntCamera>len(cameraList) {
 		this.globals.IntCamera = 0
 	}

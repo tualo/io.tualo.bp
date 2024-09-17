@@ -18,7 +18,6 @@ func (this *GrabcameraClass) processBarcodes(paper gocv.Mat){
 
 		for _, code := range codes {
 
-			//fmt.Println("code **",code.Type,code.Data)
 			if code.Type == "CODE-39" {
 				if len(code.Data) >= 3 {
 					if code.Data[0:3]=="FC4" {
