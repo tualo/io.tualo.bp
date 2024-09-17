@@ -125,30 +125,33 @@ func (this *GrabcameraClass) processMarks(paper gocv.Mat){
 					json.NewEncoder(b).Encode(outList)
 
 
-					
+					if len(this.escapedImage)==0 {
 
-					image_bytes, _ := gocv.IMEncode(gocv.JPEGFileExt, paper)
-					image_base64 := base64.StdEncoding.EncodeToString(image_bytes.GetBytes())
-					//fmt.Println("pic",image_base64[0:100])
-					image_bytes.Close()
+						image_bytes, _ := gocv.IMEncode(gocv.JPEGFileExt, paper)
+						image_base64 := base64.StdEncoding.EncodeToString(image_bytes.GetBytes())
+						//fmt.Println("pic",image_base64[0:100])
+						image_bytes.Close()
 
-					if this.sendNeeded {
-						status := this.sendImageItem(this.strCurrentBoxBarcode,this.strCurrentStackBarcode,res.Barcode,this.lastTesseractResult.PageRois[listOfRoiIndexes[0]].Types[foundIndex].Id,b.String(),"data:image/jpeg;base64,"+image_base64)
-						if status {
-							this.sendNeeded = false
-							this.currentState = this.setState("sendDone",this.currentState)
-							this.setHistoryItem(this.lastBarcode,this.strCurrentBoxBarcode,this.strCurrentStackBarcode,this.currentState)
-						}else{
-							this.currentState = this.setState("sendError",this.currentState)
-							this.setHistoryItem(this.lastBarcode,this.strCurrentBoxBarcode,this.strCurrentStackBarcode,this.currentState)
+						if this.sendNeeded {
+							status := this.sendImageItem(this.strCurrentBoxBarcode,this.strCurrentStackBarcode,res.Barcode,this.lastTesseractResult.PageRois[listOfRoiIndexes[0]].Types[foundIndex].Id,b.String(),"data:image/jpeg;base64,"+image_base64)
+							if status {
+								this.sendNeeded = false
+								this.currentState = this.setState("sendDone",this.currentState)
+								this.setHistoryItem(this.lastBarcode,this.strCurrentBoxBarcode,this.strCurrentStackBarcode,this.currentState)
+							}else{
+								this.currentState = this.setState("sendError",this.currentState)
+								this.setHistoryItem(this.lastBarcode,this.strCurrentBoxBarcode,this.strCurrentStackBarcode,this.currentState)
+							}
 						}
+
 					}
-
-
 				}
+
+				
 			}else{
 				// log.Println("IsCorrect NO!")
 			}
+			this.informImage(paper)
 		}
 	}
 	this.informImage(paper)

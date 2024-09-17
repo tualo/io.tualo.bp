@@ -97,7 +97,7 @@ func (this *GrabcameraClass) findCircles(croppedMat gocv.Mat , circleSize int,mi
 				mean := rect_circleMat.Mean()
 				rect_circleMat.Close()
 				checkMarks = append(checkMarks, structs.CheckMarks{mean.Val1, x, y, r,math.Round( mean.Val1 ) < this.globals.MeanFindCircles,roiIndex})
-				log.Println("check  ",i,this.globals.MeanFindCircles,math.Round( mean.Val1 ) < this.globals.MeanFindCircles)
+				// log.Println("check  ",i,this.globals.MeanFindCircles,math.Round( mean.Val1 ) < this.globals.MeanFindCircles)
 			}
 		}
 	}

@@ -8,7 +8,7 @@ import (
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/canvas"
 	"image"
-	// "image/color"
+	"image/color"
 	"gocv.io/x/gocv"
 	"time"
 	// assets "io.tualo.bp/assets"
@@ -18,6 +18,7 @@ import (
 	
 	"log"
 	"os"
+	"fmt"
 
 
 	"github.com/gopxl/beep"
@@ -259,7 +260,7 @@ func (t *MainScreenClass) RedrawImage() {
 					t.historyData = append(t.historyData, histItem)
 				}
 
-				if len(t.historyData)>15 {
+				if len(t.historyData)>6 {
 					t.historyData = t.historyData[1:]
 				}
 
@@ -435,13 +436,28 @@ func (t *MainScreenClass) makeLeftContainer()  fyne.CanvasObject {
 		},
 		func() fyne.CanvasObject {
 			return container.NewHBox(
-				widget.NewLabel("X"), //widget.NewIcon(theme.DocumentIcon()), 
-				widget.NewLabel("Template Object"),
+				widget.NewIcon(theme.DocumentIcon()), 
+				widget.NewRichTextFromMarkdown("**PAGINATION**\n\nStackCode"),
 			)
 		},
 		func(id widget.ListItemID, item fyne.CanvasObject) {
-			item.(*fyne.Container).Objects[0].(*widget.Label).SetText(t.historyData[id].State)
-			item.(*fyne.Container).Objects[1].(*widget.Label).SetText(t.historyData[id].Barcode)
+			// log.Println("update",id,t.historyData[id].State )
+			if t.historyData[id].State == "escaped" {
+				item.(*fyne.Container).Objects[0].(*widget.Icon).SetResource(theme.NewErrorThemedResource(theme.ErrorIcon()))
+			}
+			if t.historyData[id].State == "isCorrect" {
+				
+				item.(*fyne.Container).Objects[0].(*widget.Icon).SetResource(NewSuccessThemedResource(theme.DocumentIcon(),color.RGBA{0,55,255,255}))
+			}
+			if t.historyData[id].State == "sendDone" {
+				item.(*fyne.Container).Objects[0].(*widget.Icon).SetResource(NewSuccessThemedResource(theme.ConfirmIcon(),color.RGBA{0,255,0,255}))
+			}
+			item.(*fyne.Container).Objects[0].(*widget.Icon).Refresh()
+			md:=fmt.Sprintf("**%s**\n\n%s",t.historyData[id].Barcode,t.historyData[id].StackBarcode)
+			item.(*fyne.Container).Objects[1].(*widget.RichText).ParseMarkdown(md)
+			//item.(*fyne.Container).Objects[1].(*widget.Label).SetText(t.historyData[id].Barcode)
+			//item.(*fyne.Container).Objects[1].(*fyne.Container).Objects[0].(*widget.Label).SetText(t.historyData[id].Barcode)
+			// item.(*fyne.Container).Objects[1].(*fyne.Container).Objects[1].(*widget.Label).SetText(t.historyData[id].StackBarcode)
 		},
 	)
 

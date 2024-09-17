@@ -12,7 +12,7 @@ func (this *GrabcameraClass) setState(name string,oldState structs.ImageProcesso
 		log.Println("setState",name,oldState.Name);
 	}
 
-	if oldState.Name == "sendDone" && name != "ballotPaperCode"  && name != "noBarcodeFound" {
+	if oldState.Name == "sendDone" && name != "ballotPaperCode"  && name != "noBarcodeFound" && name != "escaped" {
 		return oldState
 	} 
 
