@@ -146,11 +146,12 @@ func (this *GrabcameraClass) tesseract(img gocv.Mat, currentOCRChannel chan stri
 			// fmt.Println("searchFor %s %d",searchFor , len(documentConfigurations[i].Titles))
 			for j := 0; j < len(documentConfigurations[i].Titles); j++ {
 				distance := levenshtein.ComputeDistance(searchFor, this.printableCharacters(documentConfigurations[i].Titles[j]))
-				errorRate := float64(distance) /*- float64(len( documentConfigurations[i].Titles[j])-len(searchFor)))*/ / float64(len(documentConfigurations[i].Titles[j]))
+				errorRate := float64(distance) /*- float64(len( documentConfigurations[i].Titles[j])-len(searchFor)))*/ / float64(len(this.printableCharacters(documentConfigurations[i].Titles[j])))
 
 				if strings.Contains(searchFor, this.printableCharacters(documentConfigurations[i].Titles[j])) {
 					errorRate = 0
 				}
+				log.Println("ErrorRate:", errorRate, "Seacrch:", searchFor, this.printableCharacters(documentConfigurations[i].Titles[j]))
 				if errorRate < 0.3 {
 					result.Title = documentConfigurations[i].Titles[j]
 
