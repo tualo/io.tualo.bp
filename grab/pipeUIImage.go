@@ -12,7 +12,7 @@ func (this *GrabcameraClass) pipeUIImage(img gocv.Mat){
 	}
 
 	cloned := img.Clone()
-	gocv.Resize(cloned, &cloned, image.Point{}, 0.3, 0.3 , gocv.InterpolationLinear)
+	gocv.Resize(cloned, &cloned, image.Point{}, 0.5, 0.5 , gocv.InterpolationLinear)
 	this.imageChannelPaper <- cloned
 	//cloned.Close()
 }

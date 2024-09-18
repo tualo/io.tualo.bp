@@ -13,7 +13,20 @@ import (
 type SettingsScreenClass struct {
 	grabber *grabcamera.GrabcameraClass
 	globals *globals.GlobalValuesClass
+
+
 	cameraSelectWidget *widget.Select
+	cameraCaptureFrameFactorWidget *widget.Slider
+	cameraCaptureFrameFactorWidgetLabel *widget.Label
+
+	cameraCaptureFPSWidget *widget.Slider
+	cameraCaptureFPSWidgetLabel *widget.Label
+
+
+	paperContourFactorWidget *widget.Slider
+	paperContourFactorWidgetLabel *widget.Label
+
+
 	thresholdHoughCirclesWidget *widget.Slider
 	meanFindCirclesWidget *widget.Slider
 	dpHoughCirclesWidget *widget.Slider
@@ -63,11 +76,58 @@ func (this *SettingsScreenClass) makeSettingsForm() fyne.CanvasObject {
 		}
 	}
 
+	this.cameraCaptureFrameFactorWidgetLabel = widget.NewLabel(fmt.Sprintf("%.2f", this.globals.CaptureFrameFactor))
+	this.cameraCaptureFrameFactorWidget = widget.NewSlider(1,3)
+	// 1 = 1.0, 2 = 0.75, 3 = 0.5
+	if this.globals.CaptureFrameFactor == 1 {
+		this.cameraCaptureFrameFactorWidget.Value = 1
+	}else if this.globals.CaptureFrameFactor == 0.75 {
+		this.cameraCaptureFrameFactorWidget.Value = 2
+	}else if this.globals.CaptureFrameFactor == 0.5 {
+		this.cameraCaptureFrameFactorWidget.Value = 3
+	}
+	// this.cameraCaptureFrameFactorWidget.Value = 1 / this.globals.CaptureFrameFactor 
+	this.cameraCaptureFrameFactorWidget.OnChangeEnded = func(value float64) {
+		fmt.Println("cameraCaptureFrameFactorWidget",value)
+		if value == 1 {
+			this.globals.CaptureFrameFactor = 1
+		}else if value == 2 {
+			this.globals.CaptureFrameFactor = 0.75
+		}else if value == 3 {
+			this.globals.CaptureFrameFactor = 0.5
+		}
+
+		this.cameraCaptureFrameFactorWidgetLabel.SetText(fmt.Sprintf("%.2f", this.globals.CaptureFrameFactor))
+	}
+
+
+	this.cameraCaptureFPSWidgetLabel = widget.NewLabel(fmt.Sprintf("%.0f", this.globals.CaptureFPS))
+	this.cameraCaptureFPSWidget = widget.NewSlider(1,15)
+	this.cameraCaptureFPSWidget.Value = this.globals.CaptureFPS
+	this.cameraCaptureFPSWidget.OnChangeEnded = func(value float64) {
+		this.globals.CaptureFPS = value
+		this.cameraCaptureFPSWidgetLabel.SetText(fmt.Sprintf("%.0f", this.globals.CaptureFPS))
+	}
+
+	// ----------------- PaperContour -----------------
+
+	this.paperContourFactorWidgetLabel = widget.NewLabel(fmt.Sprintf("%.2f", this.globals.PaperFindContourFactor))
+	this.paperContourFactorWidget = widget.NewSlider(1, 10)
+	this.paperContourFactorWidget.Value = 1/this.globals.PaperFindContourFactor
+	this.paperContourFactorWidget.OnChangeEnded = func(value float64) {
+		this.globals.PaperFindContourFactor = 1/value
+		this.paperContourFactorWidgetLabel.SetText(fmt.Sprintf("%.2f", this.globals.PaperFindContourFactor))
+	}
+
+
+
+	// ----------------- Circle Detection -----------------
+
 
 	this.thresholdHoughCirclesWidgetLabel = widget.NewLabel(fmt.Sprintf("%.0f", this.globals.ThresholdHoughCircles))
 	this.meanFindCirclesWidgetLabel = widget.NewLabel(fmt.Sprintf("%.0f", this.globals.MeanFindCircles))
 	this.dpHoughCirclesWidgetLabel = widget.NewLabel(fmt.Sprintf("%.0f", this.globals.DpHoughCircles))
-	this.gaussianBlurFindCirclesWidgetLabel = widget.NewLabel(fmt.Sprintf("%d", this.globals.GaussianBlurFindCircles))
+	this.gaussianBlurFindCirclesWidgetLabel = widget.NewLabel(fmt.Sprintf("%.2fmm", this.globals.GaussianBlurFindCircles))
 	this.adaptiveThresholdBlockSizeWidgetLabel = widget.NewLabel(fmt.Sprintf("%d", this.globals.AdaptiveThresholdBlockSize))
 	this.adaptiveThresholdSubtractMeanWidgetLabel = widget.NewLabel(fmt.Sprintf("%.1f", this.globals.AdaptiveThresholdSubtractMean))
 
@@ -95,12 +155,12 @@ func (this *SettingsScreenClass) makeSettingsForm() fyne.CanvasObject {
 		this.dpHoughCirclesWidgetLabel.SetText(fmt.Sprintf("%.0f", value))
 	}
 
-	this.gaussianBlurFindCirclesWidget = widget.NewSlider(0, 255)
+	this.gaussianBlurFindCirclesWidget = widget.NewSlider(1, 50)
 	this.gaussianBlurFindCirclesWidget.Value = float64(this.globals.GaussianBlurFindCircles)
 	this.gaussianBlurFindCirclesWidget.OnChangeEnded = func(value float64) {
 
-		this.globals.GaussianBlurFindCircles = int(value)
-		this.gaussianBlurFindCirclesWidgetLabel.SetText(fmt.Sprintf("%d", int(value)))
+		this.globals.GaussianBlurFindCircles =  (value/10)
+		this.gaussianBlurFindCirclesWidgetLabel.SetText(fmt.Sprintf("%.2fmm", this.globals.GaussianBlurFindCircles ))
 
 	}
 
@@ -121,8 +181,26 @@ func (this *SettingsScreenClass) makeSettingsForm() fyne.CanvasObject {
 	txt:=widget.NewLabel("Camera")
 	
 	container := container.New(layout.NewVBoxLayout(), 
+	
 	txt,
 	this.cameraSelectWidget,
+	widget.NewLabel("Frame Factor"),
+	container.NewBorder( nil, nil, nil, this.cameraCaptureFrameFactorWidgetLabel,this.cameraCaptureFrameFactorWidget ),
+	widget.NewLabel("FPS"),
+	container.NewBorder( nil, nil, nil, this.cameraCaptureFPSWidgetLabel,this.cameraCaptureFPSWidget ),
+
+
+	widget.NewAccordion(
+		&widget.AccordionItem{
+			Title:  "Paper",
+			Detail: container.New(
+				layout.NewGridLayout(1), 
+				widget.NewLabel("Contour Factor"),
+				container.NewBorder( nil, nil, nil, this.paperContourFactorWidgetLabel,this.paperContourFactorWidget ),
+			),
+		},
+	),
+
 	widget.NewAccordion(
 		&widget.AccordionItem{
 			Title:  "Kreisdetetion",

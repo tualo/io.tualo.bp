@@ -71,9 +71,11 @@ func (this *GrabcameraClass) SetDocumentConfigurations(conf structs.DocumentConf
 func (this *GrabcameraClass) SetGlobalValues(globals *globals.GlobalValuesClass) {
 	this.globals = globals
 
+	/*
 	if this.globals.GaussianBlurFindCircles%2 != 1 {
 		this.globals.GaussianBlurFindCircles++
 	}
+	*/
 
 	if this.globals.AdaptiveThresholdBlockSize%2 != 1 {
 		this.globals.AdaptiveThresholdBlockSize++
@@ -151,10 +153,12 @@ func (this *GrabcameraClass) Grabcamera() {
 			webcam.Set(gocv.VideoCaptureFrameHeight, float64(this.globals.ForcedCameraHeight))
 		}
 
-		webcam.Set(gocv.VideoCaptureFrameWidth, webcam.Get(gocv.VideoCaptureFrameWidth)/2)
-		webcam.Set(gocv.VideoCaptureFrameHeight, webcam.Get(gocv.VideoCaptureFrameHeight)/2)
-		//webcam.Set(gocv.VideoCaptureFrameWidth, 4608/2)
-		//webcam.Set(gocv.VideoCaptureFrameHeight, 3456/2)
+		webcam.Set(gocv.VideoCaptureFrameWidth, webcam.Get(gocv.VideoCaptureFrameWidth) *  this.globals.CaptureFrameFactor)
+		webcam.Set(gocv.VideoCaptureFrameHeight, webcam.Get(gocv.VideoCaptureFrameHeight) *  this.globals.CaptureFrameFactor)
+		webcam.Set(gocv.VideoCaptureFPS,  this.globals.CaptureFPS )
+
+		fmt.Println("Open camera", this.globals.IntCamera, webcam.Get(gocv.VideoCaptureFPS), webcam.Get(gocv.VideoCaptureFrameWidth), webcam.Get(gocv.VideoCaptureFrameHeight))
+		
 
 		if err != nil {
 			fmt.Println("Error opening capture device: ", 0)
@@ -171,6 +175,7 @@ func (this *GrabcameraClass) Grabcamera() {
 		checkMarkList := []CheckMarkList{}
 		lastReturnType := ReturnType{}
 	*/
+	this.globals.Save()
 	for this.runVideo {
 		start := time.Now()
 		rotated := gocv.NewMat()

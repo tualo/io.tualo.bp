@@ -9,6 +9,13 @@ import (
 type GlobalValuesClass struct {
 	ConfigData *config.ConfigurationClass
 	IntCamera int
+	CaptureFrameFactor float64
+	CaptureFPS float64
+
+
+	PaperFindContourFactor float64
+
+
 	SumMarksAVG float64
 	RunVideo bool
 	LogGrabcamera bool
@@ -23,7 +30,7 @@ type GlobalValuesClass struct {
 	MinDistHoughCircles float64
 	ThresholdHoughCircles float64
 	AccumulatorThresholdHoughCircles float64
-	GaussianBlurFindCircles int
+	GaussianBlurFindCircles float64
 	AdaptiveThresholdBlockSize int
 	AdaptiveThresholdSubtractMean float32
 	TesseractPrefix string
@@ -42,161 +49,14 @@ func NewGlobalValuesClass() *GlobalValuesClass {
 	return o
 }
 
-/*
-func (o *GlobalValuesClass) SetConfig(cnf *config.ConfigurationClass) {
-	o.configData = cnf
-}
-
-func (this *GlobalValuesClass) SetFloat32(key string,value float32) {
-	switch key {
-	case "adaptiveThresholdSubtractMean":
-		this.adaptiveThresholdSubtractMean = value
-	default:
-		return
-	}
-}
-
-func (this *GlobalValuesClass) SetFloat64(key string,value float64) {
-	switch key {
-	case "sumMarksAVG":
-		this.sumMarksAVG = value
-	case "meanFindCircles":
-		this.meanFindCircles = value
-	case "dpHoughCircles":
-		this.dpHoughCircles = value
-	case "minDistHoughCircles":
-		this.minDistHoughCircles = value
-	case "thresholdHoughCircles":
-		this.thresholdHoughCircles = value
-	case "accumulatorThresholdHoughCircles":
-		this.accumulatorThresholdHoughCircles = value
-	default:
-		return
-	}
-}
-
-func (this *GlobalValuesClass) SetBool(key string,value bool) {
-	switch key {
-		case "runVideo":
-			this.runVideo = value
-		case "showOutputImage":
-			this.showOutputImage = value
-		case "showPaperImage":
-			this.showPaperImage = value
-		case "showCirlceImage":
-			this.showCirlceImage = value
-		case "showDebugList":
-			this.showDebugList = value
-		case "showOpenCVWindow":
-			this.showOpenCVWindow = value
-		default:
-			return
-	}
-}
-
-func (this *GlobalValuesClass) GetBool(key string) bool{
-	switch key {
-		case "runVideo":
-			return this.runVideo
-		case "showOutputImage":
-			return this.showOutputImage
-		case "showPaperImage":
-			return this.showPaperImage
-		case "showCirlceImage":
-			return this.showCirlceImage
-		case "showDebugList":
-			return this.showDebugList
-		case "showOpenCVWindow":
-			return this.showOpenCVWindow
-		default:
-			return false
-	}
-}
-
-
-func (this *GlobalValuesClass) SetInt(key string,value int) {
-	switch key {
-		case "innerOverdrawDrawCircles":
-			this.innerOverdrawDrawCircles = value
-		case "outerOverdrawDrawCircles":
-			this.outerOverdrawDrawCircles = value
-		case "gaussianBlurFindCircles":
-			this.gaussianBlurFindCircles = value
-		case "adaptiveThresholdBlockSize":
-			this.adaptiveThresholdBlockSize = value
-		case "forcedCameraWidth":
-			this.forcedCameraWidth = value
-		case "forcedCameraHeight":
-			this.forcedCameraHeight = value
-		case "barcodeScale":
-			this.barcodeScale = value
-		case "tesseractScale":
-			this.tesseractScale = value
-		case "intCamera":
-			this.intCamera = value
-		default:
-			return
-
-	}
-}
-
-func (this *GlobalValuesClass) GetInt(key string) int{
-	
-	switch key {
-	case "innerOverdrawDrawCircles":
-		return this.innerOverdrawDrawCircles
-	case "outerOverdrawDrawCircles":
-		return this.outerOverdrawDrawCircles
-	case "gaussianBlurFindCircles":
-		return this.gaussianBlurFindCircles
-	case "adaptiveThresholdBlockSize":
-		return this.adaptiveThresholdBlockSize
-	case "forcedCameraWidth":
-		return this.forcedCameraWidth
-	case "forcedCameraHeight":
-		return this.forcedCameraHeight
-	case "barcodeScale":
-		return this.barcodeScale
-	case "tesseractScale":
-		return this.tesseractScale
-	case "intCamera":
-		return this.intCamera
-	default:
-		return 0
-	}
-}
-
-func (this *GlobalValuesClass) GetFloat32(key string) float32{
-	switch key {
-	case "adaptiveThresholdSubtractMean":
-		return this.adaptiveThresholdSubtractMean
-	default:
-		return 0
-	}
-}
-
-func (this *GlobalValuesClass) GetFloat64(key string) float64{
-	switch key {
-	case "sumMarksAVG":
-		return this.sumMarksAVG
-	case "meanFindCircles":
-		return this.meanFindCircles
-	case "dpHoughCircles":
-		return this.dpHoughCircles
-	case "minDistHoughCircles":
-		return this.minDistHoughCircles
-	case "thresholdHoughCircles":
-		return this.thresholdHoughCircles
-	case "accumulatorThresholdHoughCircles":
-		return this.accumulatorThresholdHoughCircles
-	default:
-		return 0
-	}
-}
-*/
 
 func (this *GlobalValuesClass) SetDefaults(){
 	this.IntCamera = 1
+	this.CaptureFrameFactor = 0.5
+	this.CaptureFPS = 3.0
+
+	this.PaperFindContourFactor = 0.2
+
 	this.SumMarksAVG = 0.75
 	this.RunVideo = false
 	this.LogGrabcamera = false
@@ -211,7 +71,7 @@ func (this *GlobalValuesClass) SetDefaults(){
 	this.MinDistHoughCircles = 50
 	this.ThresholdHoughCircles = 90
 	this.AccumulatorThresholdHoughCircles = 10
-	this.GaussianBlurFindCircles = 1
+	this.GaussianBlurFindCircles = 1.0
 	this.AdaptiveThresholdBlockSize = 9
 	this.AdaptiveThresholdSubtractMean = 4.0
 	this.TesseractPrefix = ""
@@ -238,10 +98,9 @@ func (this *GlobalValuesClass) Load() {
 	this.MinDistHoughCircles = this.ConfigData.GetFloat64("settings","minDistHoughCircles",defaults.MinDistHoughCircles)
 	this.ThresholdHoughCircles = this.ConfigData.GetFloat64("settings","thresholdHoughCircles",defaults.ThresholdHoughCircles)
 	this.AccumulatorThresholdHoughCircles = this.ConfigData.GetFloat64("settings","accumulatorThresholdHoughCircles",defaults.AccumulatorThresholdHoughCircles)
-	this.GaussianBlurFindCircles = this.ConfigData.GetInt("settings","gaussianBlurFindCircles",defaults.GaussianBlurFindCircles)
-	if this.GaussianBlurFindCircles==19 {
-		this.GaussianBlurFindCircles = 1
-	}
+	this.GaussianBlurFindCircles = this.ConfigData.GetFloat64("settings","gaussianBlurFindCircles",defaults.GaussianBlurFindCircles)
+	
+	
 	this.AdaptiveThresholdBlockSize = this.ConfigData.GetInt("settings","adaptiveThresholdBlockSize",defaults.AdaptiveThresholdBlockSize)
 	this.AdaptiveThresholdSubtractMean = this.ConfigData.GetFloat32("settings","adaptiveThresholdSubtractMean",defaults.AdaptiveThresholdSubtractMean)
 	this.TesseractPrefix = this.ConfigData.Get("settings","tesseractPrefix")
@@ -250,6 +109,14 @@ func (this *GlobalValuesClass) Load() {
 	this.BarcodeScale = this.ConfigData.GetInt("settings","barcodeScale",defaults.BarcodeScale)
 	this.TesseractScale = this.ConfigData.GetInt("settings","tesseractScale",defaults.TesseractScale)
 	this.ShowOpenCVWindow = this.ConfigData.GetBool("settings","showOpenCVWindow",defaults.ShowOpenCVWindow)
+	
+	this.IntCamera = this.ConfigData.GetInt("camera","index",defaults.IntCamera)
+	this.CaptureFrameFactor = this.ConfigData.GetFloat64("camera","captureFrameFactor",defaults.CaptureFrameFactor)
+	this.CaptureFPS = this.ConfigData.GetFloat64("camera","captureFPS",defaults.CaptureFPS)
+
+
+	this.PaperFindContourFactor = this.ConfigData.GetFloat64("paper","contourFactor",defaults.PaperFindContourFactor)
+
 }
 
 func (this *GlobalValuesClass) Save() {
@@ -266,7 +133,7 @@ func (this *GlobalValuesClass) Save() {
 	this.ConfigData.SetFloat64("settings","minDistHoughCircles",this.MinDistHoughCircles)
 	this.ConfigData.SetFloat64("settings","thresholdHoughCircles",this.ThresholdHoughCircles)
 	this.ConfigData.SetFloat64("settings","accumulatorThresholdHoughCircles",this.AccumulatorThresholdHoughCircles)
-	this.ConfigData.SetInt("settings","gaussianBlurFindCircles",this.GaussianBlurFindCircles)
+	this.ConfigData.SetFloat64("settings","gaussianBlurFindCircles",this.GaussianBlurFindCircles)
 	this.ConfigData.SetInt("settings","adaptiveThresholdBlockSize",this.AdaptiveThresholdBlockSize)
 	this.ConfigData.SetFloat32("settings","adaptiveThresholdSubtractMean",this.AdaptiveThresholdSubtractMean)
 	this.ConfigData.Set("settings","tesseractPrefix",this.TesseractPrefix)
@@ -275,5 +142,14 @@ func (this *GlobalValuesClass) Save() {
 	this.ConfigData.SetInt("settings","barcodeScale",this.BarcodeScale)
 	this.ConfigData.SetInt("settings","tesseractScale",this.TesseractScale)
 	this.ConfigData.SetBool("settings","showOpenCVWindow",this.ShowOpenCVWindow)
+
+	this.ConfigData.SetInt("camera","index",this.IntCamera)
+	this.ConfigData.SetFloat64("camera","captureFrameFactor",this.CaptureFrameFactor)
+	this.ConfigData.SetFloat64("camera","captureFPS",this.CaptureFPS)
+
+	this.ConfigData.SetFloat64("paper","contourFactor",this.PaperFindContourFactor)
+
+
+
 	this.ConfigData.Save()
 }

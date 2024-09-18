@@ -9,7 +9,7 @@ func (this *GrabcameraClass) processImageChannelData(){
 
 	gocv.CvtColor(this.img, &this.img, gocv.ColorBGRToBGRA)
 	this.currentState = this.setState("findPaperContour",this.currentState)
-	this.contour = findPaperContour(this.img)
+	this.contour = this.findPaperContour(this.img)
 	if this.contour.Size() == 0 {
 		// contour.Close()
 		this.pipeUIImage(this.img)

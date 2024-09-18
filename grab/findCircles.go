@@ -65,7 +65,7 @@ func (this *GrabcameraClass) findCircles(croppedMat gocv.Mat, circleSize int, mi
 	imgBlur := gocv.NewMat()
 	gocv.CvtColor(croppedMat, &imgGray, gocv.ColorBGRToGray)
 
-	blurSize := int(math.Round(float64(this.globals.GaussianBlurFindCircles) * this.pixelScale))
+	blurSize := int(math.Round( (this.globals.GaussianBlurFindCircles) * this.pixelScale))
 	if blurSize%2 == 0 {
 		blurSize++
 	}
