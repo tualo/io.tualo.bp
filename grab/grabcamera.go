@@ -75,7 +75,7 @@ func (this *GrabcameraClass) SetGlobalValues(globals *globals.GlobalValuesClass)
 	if this.globals.GaussianBlurFindCircles%2 != 1 {
 		this.globals.GaussianBlurFindCircles++
 	}
-	*/
+	
 
 	if this.globals.AdaptiveThresholdBlockSize%2 != 1 {
 		this.globals.AdaptiveThresholdBlockSize++
@@ -84,7 +84,7 @@ func (this *GrabcameraClass) SetGlobalValues(globals *globals.GlobalValuesClass)
 	if this.globals.AdaptiveThresholdBlockSize < 3 {
 		this.globals.AdaptiveThresholdBlockSize = 3
 	}
-
+*/
 }
 
 func (this *GrabcameraClass) GetCameraList() []structs.CameraList {

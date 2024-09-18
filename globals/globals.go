@@ -31,7 +31,7 @@ type GlobalValuesClass struct {
 	ThresholdHoughCircles float64
 	AccumulatorThresholdHoughCircles float64
 	GaussianBlurFindCircles float64
-	AdaptiveThresholdBlockSize int
+	AdaptiveThresholdBlockSize float64
 	AdaptiveThresholdSubtractMean float32
 	TesseractPrefix string
 	ForcedCameraWidth int
@@ -72,7 +72,7 @@ func (this *GlobalValuesClass) SetDefaults(){
 	this.ThresholdHoughCircles = 90
 	this.AccumulatorThresholdHoughCircles = 10
 	this.GaussianBlurFindCircles = 1.0
-	this.AdaptiveThresholdBlockSize = 9
+	this.AdaptiveThresholdBlockSize = 9.0
 	this.AdaptiveThresholdSubtractMean = 4.0
 	this.TesseractPrefix = ""
 	this.ForcedCameraWidth = -1
@@ -101,7 +101,7 @@ func (this *GlobalValuesClass) Load() {
 	this.GaussianBlurFindCircles = this.ConfigData.GetFloat64("settings","gaussianBlurFindCircles",defaults.GaussianBlurFindCircles)
 	
 	
-	this.AdaptiveThresholdBlockSize = this.ConfigData.GetInt("settings","adaptiveThresholdBlockSize",defaults.AdaptiveThresholdBlockSize)
+	this.AdaptiveThresholdBlockSize = this.ConfigData.GetFloat64("settings","adaptiveThresholdBlockSize",defaults.AdaptiveThresholdBlockSize)
 	this.AdaptiveThresholdSubtractMean = this.ConfigData.GetFloat32("settings","adaptiveThresholdSubtractMean",defaults.AdaptiveThresholdSubtractMean)
 	this.TesseractPrefix = this.ConfigData.Get("settings","tesseractPrefix")
 	this.ForcedCameraWidth = this.ConfigData.GetInt("settings","forcedCameraWidth",defaults.ForcedCameraWidth)
@@ -134,7 +134,7 @@ func (this *GlobalValuesClass) Save() {
 	this.ConfigData.SetFloat64("settings","thresholdHoughCircles",this.ThresholdHoughCircles)
 	this.ConfigData.SetFloat64("settings","accumulatorThresholdHoughCircles",this.AccumulatorThresholdHoughCircles)
 	this.ConfigData.SetFloat64("settings","gaussianBlurFindCircles",this.GaussianBlurFindCircles)
-	this.ConfigData.SetInt("settings","adaptiveThresholdBlockSize",this.AdaptiveThresholdBlockSize)
+	this.ConfigData.SetFloat64("settings","adaptiveThresholdBlockSize",this.AdaptiveThresholdBlockSize)
 	this.ConfigData.SetFloat32("settings","adaptiveThresholdSubtractMean",this.AdaptiveThresholdSubtractMean)
 	this.ConfigData.Set("settings","tesseractPrefix",this.TesseractPrefix)
 	this.ConfigData.SetInt("settings","forcedCameraWidth",this.ForcedCameraWidth)

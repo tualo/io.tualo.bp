@@ -128,7 +128,7 @@ func (this *SettingsScreenClass) makeSettingsForm() fyne.CanvasObject {
 	this.meanFindCirclesWidgetLabel = widget.NewLabel(fmt.Sprintf("%.0f", this.globals.MeanFindCircles))
 	this.dpHoughCirclesWidgetLabel = widget.NewLabel(fmt.Sprintf("%.0f", this.globals.DpHoughCircles))
 	this.gaussianBlurFindCirclesWidgetLabel = widget.NewLabel(fmt.Sprintf("%.2fmm", this.globals.GaussianBlurFindCircles))
-	this.adaptiveThresholdBlockSizeWidgetLabel = widget.NewLabel(fmt.Sprintf("%d", this.globals.AdaptiveThresholdBlockSize))
+	this.adaptiveThresholdBlockSizeWidgetLabel = widget.NewLabel(fmt.Sprintf("%.2fmm", this.globals.AdaptiveThresholdBlockSize))
 	this.adaptiveThresholdSubtractMeanWidgetLabel = widget.NewLabel(fmt.Sprintf("%.1f", this.globals.AdaptiveThresholdSubtractMean))
 
 
@@ -156,7 +156,7 @@ func (this *SettingsScreenClass) makeSettingsForm() fyne.CanvasObject {
 	}
 
 	this.gaussianBlurFindCirclesWidget = widget.NewSlider(1, 50)
-	this.gaussianBlurFindCirclesWidget.Value = float64(this.globals.GaussianBlurFindCircles)
+	this.gaussianBlurFindCirclesWidget.Value = float64(this.globals.GaussianBlurFindCircles) * 10
 	this.gaussianBlurFindCirclesWidget.OnChangeEnded = func(value float64) {
 
 		this.globals.GaussianBlurFindCircles =  (value/10)
@@ -164,11 +164,11 @@ func (this *SettingsScreenClass) makeSettingsForm() fyne.CanvasObject {
 
 	}
 
-	this.adaptiveThresholdBlockSizeWidget = widget.NewSlider(0, 255)
-	this.adaptiveThresholdBlockSizeWidget.Value = float64(this.globals.AdaptiveThresholdBlockSize)
+	this.adaptiveThresholdBlockSizeWidget = widget.NewSlider(30, 90)
+	this.adaptiveThresholdBlockSizeWidget.Value = float64(this.globals.AdaptiveThresholdBlockSize) * 10
 	this.adaptiveThresholdBlockSizeWidget.OnChangeEnded = func(value float64) {
-		this.globals.AdaptiveThresholdBlockSize = int(value)
-		this.adaptiveThresholdBlockSizeWidgetLabel.SetText(fmt.Sprintf("%d", int(value)))
+		this.globals.AdaptiveThresholdBlockSize =  value/10
+		this.adaptiveThresholdBlockSizeWidgetLabel.SetText(fmt.Sprintf("%.2fmm",  (this.globals.AdaptiveThresholdBlockSize)))
 
 	}
 
@@ -178,56 +178,65 @@ func (this *SettingsScreenClass) makeSettingsForm() fyne.CanvasObject {
 		this.globals.AdaptiveThresholdSubtractMean = float32(value)
 		this.adaptiveThresholdSubtractMeanWidgetLabel.SetText(fmt.Sprintf("%.1f", value))
 	}
-	txt:=widget.NewLabel("Camera")
 	
 	container := container.New(layout.NewVBoxLayout(), 
 	
-	txt,
-	this.cameraSelectWidget,
-	widget.NewLabel("Frame Factor"),
-	container.NewBorder( nil, nil, nil, this.cameraCaptureFrameFactorWidgetLabel,this.cameraCaptureFrameFactorWidget ),
-	widget.NewLabel("FPS"),
-	container.NewBorder( nil, nil, nil, this.cameraCaptureFPSWidgetLabel,this.cameraCaptureFPSWidget ),
+		widget.NewAccordion(
+			&widget.AccordionItem{
+				Title:  "Kamera",
+				Detail: container.New(
+					layout.NewGridLayout(1), 
+					widget.NewLabel("Camera"),
+					this.cameraSelectWidget,
+					widget.NewLabel("Frame Factor"),
+					container.NewBorder( nil, nil, nil, this.cameraCaptureFrameFactorWidgetLabel,this.cameraCaptureFrameFactorWidget ),
+					/*
+		widget.NewLabel("FPS"),
+		container.NewBorder( nil, nil, nil, this.cameraCaptureFPSWidgetLabel,this.cameraCaptureFPSWidget ),
+		*/
+				),
+			},
+		),
 
 
-	widget.NewAccordion(
-		&widget.AccordionItem{
-			Title:  "Paper",
-			Detail: container.New(
-				layout.NewGridLayout(1), 
-				widget.NewLabel("Contour Factor"),
-				container.NewBorder( nil, nil, nil, this.paperContourFactorWidgetLabel,this.paperContourFactorWidget ),
-			),
-		},
-	),
+		widget.NewAccordion(
+			&widget.AccordionItem{
+				Title:  "Paper",
+				Detail: container.New(
+					layout.NewGridLayout(1), 
+					widget.NewLabel("Contour Factor"),
+					container.NewBorder( nil, nil, nil, this.paperContourFactorWidgetLabel,this.paperContourFactorWidget ),
+				),
+			},
+		),
 
-	widget.NewAccordion(
-		&widget.AccordionItem{
-			Title:  "Kreisdetetion",
-			Detail: container.New(
-				layout.NewGridLayout(1), 
-				widget.NewLabel("Mean Find Circles"),
-				container.NewBorder( nil, nil, nil, this.meanFindCirclesWidgetLabel,this.meanFindCirclesWidget ),
+		widget.NewAccordion(
+			&widget.AccordionItem{
+				Title:  "Kreisdetetion",
+				Detail: container.New(
+					layout.NewGridLayout(1), 
+					widget.NewLabel("Mean Find Circles"),
+					container.NewBorder( nil, nil, nil, this.meanFindCirclesWidgetLabel,this.meanFindCirclesWidget ),
 
-				widget.NewLabel("Hough Circles Threshold"),
-				container.NewBorder( nil, nil, nil, this.thresholdHoughCirclesWidgetLabel,this.thresholdHoughCirclesWidget ),
+					widget.NewLabel("Hough Circles Threshold"),
+					container.NewBorder( nil, nil, nil, this.thresholdHoughCirclesWidgetLabel,this.thresholdHoughCirclesWidget ),
 
-				widget.NewLabel("Inverse ratio of the accumulator"),
-				container.NewBorder( nil, nil, nil, this.dpHoughCirclesWidgetLabel,this.dpHoughCirclesWidget ),
+					widget.NewLabel("Inverse ratio of the accumulator"),
+					container.NewBorder( nil, nil, nil, this.dpHoughCirclesWidgetLabel,this.dpHoughCirclesWidget ),
 
-				widget.NewLabel("Blursize"),
-				container.NewBorder( nil, nil, nil, this.gaussianBlurFindCirclesWidgetLabel,this.gaussianBlurFindCirclesWidget ),
+					widget.NewLabel("Blursize"),
+					container.NewBorder( nil, nil, nil, this.gaussianBlurFindCirclesWidgetLabel,this.gaussianBlurFindCirclesWidget ),
 
 
-				widget.NewLabel("Adaptive Threshold Block Size"),
-				container.NewBorder( nil, nil, nil, this.adaptiveThresholdBlockSizeWidgetLabel,this.adaptiveThresholdBlockSizeWidget ),
+					widget.NewLabel("Adaptive Threshold Block Size"),
+					container.NewBorder( nil, nil, nil, this.adaptiveThresholdBlockSizeWidgetLabel,this.adaptiveThresholdBlockSizeWidget ),
 
-				widget.NewLabel("Adaptive Threshold Subtract Mean"),
-				container.NewBorder( nil, nil, nil, this.adaptiveThresholdSubtractMeanWidgetLabel,this.adaptiveThresholdSubtractMeanWidget ), 
-			), 
-		}, 
-	),
-)
+					widget.NewLabel("Adaptive Threshold Subtract Mean"),
+					container.NewBorder( nil, nil, nil, this.adaptiveThresholdSubtractMeanWidgetLabel,this.adaptiveThresholdSubtractMeanWidget ), 
+				), 
+			}, 
+		),
+	)
 	return  container
 }
 
