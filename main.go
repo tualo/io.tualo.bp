@@ -26,95 +26,96 @@ var g *globals.GlobalValuesClass
 
 var appID = "io.tualo.bp"
 func main() {
+	 
+
+		configData = config.NewConfigurationClass()
+		configData.SetAppID(appID)
+		configData.Load()
 
 
-	configData = config.NewConfigurationClass()
-	configData.SetAppID(appID)
-	configData.Load()
+		g = globals.NewGlobalValuesClass()
+		g.SetDefaults()
+		log.Println("globals",g)
+		g.ConfigData = configData
+		g.Load()
 
 
-	g = globals.NewGlobalValuesClass()
-	g.SetDefaults()
-	log.Println("globals",g)
-	g.ConfigData = configData
-	g.Load()
-
-
-	log.Println("globals",g)
-	
-
-	grabber := grab.NewGrabcameraClass()
-	grabber.SetGlobalValues( g )
-
-	a := app.NewWithID(appID)
-	w := a.NewWindow("tualo - ballot scanner")
-	topWindow = w
-	fyne.CurrentApp().Settings().SetTheme(theme.DefaultTheme())
-
-	loginScreenClass = ui.NewLoginScreenClass()
-	loginScreenClass.SetConfig(configData)
-	loginScreenClass.SetOnLogin(func(name string) {
-		loginContainer.Hide()
-		cameraContainer.Show()
-		mainScreenClass.SetFullName(name)
-	})
+		log.Println("globals",g)
 		
-	loginContainer = loginScreenClass.CreateContainer()
 
-	mainScreenClass = ui.NewMainScreenClass()
+		grabber := grab.NewGrabcameraClass()
+		grabber.SetGlobalValues( g )
 
-	mainScreenClass.SetGlobals(g)
+		a := app.NewWithID(appID)
+		w := a.NewWindow("tualo - ballot scanner")
+		topWindow = w
+		fyne.CurrentApp().Settings().SetTheme(theme.DefaultTheme())
 
-
-
-	startStop:=func() {
-
-		if !mainScreenClass.GetPlayState() {
-			conf,err := api.GetConfig()
-
-			if err != nil {
-				log.Println("GetConfig ERROR",err)
-				return
-			}
-			log.Println("GetConfig",conf)
-			log.Println("GetConfig ROIS",conf[0].Rois)
+		loginScreenClass = ui.NewLoginScreenClass()
+		loginScreenClass.SetConfig(configData)
+		loginScreenClass.SetOnLogin(func(name string) {
+			loginContainer.Hide()
+			cameraContainer.Show()
+			mainScreenClass.SetFullName(name)
+		})
 			
-			grabber.SetDocumentConfigurations(conf)
+		loginContainer = loginScreenClass.CreateContainer()
+
+		mainScreenClass = ui.NewMainScreenClass()
+
+		mainScreenClass.SetGlobals(g)
+
+
+
+		startStop:=func() {
+
+			if !mainScreenClass.GetPlayState() {
+				conf,err := api.GetConfig()
+
+				if err != nil {
+					log.Println("GetConfig ERROR",err)
+					return
+				}
+				log.Println("GetConfig",conf)
+				log.Println("GetConfig ROIS",conf[0].Rois)
+				
+				grabber.SetDocumentConfigurations(conf)
+			}
+			
+			mainScreenClass.SetChannel(grabber.GetChannel())
+			grabber.SetRun(!mainScreenClass.GetPlayState())
+			mainScreenClass.SetPlayState(!mainScreenClass.GetPlayState())
 		}
 		
-		mainScreenClass.SetChannel(grabber.GetChannel())
-		grabber.SetRun(!mainScreenClass.GetPlayState())
-		mainScreenClass.SetPlayState(!mainScreenClass.GetPlayState())
-	}
-	
-	cameraContainer = mainScreenClass.CreateContainer(startStop)
+		cameraContainer = mainScreenClass.CreateContainer(startStop)
 
-	mainScreenClass.SetOnLogout(func( ) {
-		cameraContainer.Hide()
+		mainScreenClass.SetOnLogout(func( ) {
+			cameraContainer.Hide()
+			loginContainer.Show()
+		})
+
+		
+		content := container.New(
+			layout.NewStackLayout(), 
+			loginContainer,
+			cameraContainer,
+			
+		)
 		loginContainer.Show()
-	})
+		cameraContainer.Hide()
 
+		w.SetContent(content)
+
+		w.SetMaster()
+
+		w.Canvas().SetOnTypedKey(func(k *fyne.KeyEvent) {
+			log.Println(k.Name)
+			if (cameraContainer.Visible()){
+				mainScreenClass.OnTypedKey(k,startStop)
+			}
+		})
+
+		w.Resize(fyne.NewSize(640, 460))
+		w.ShowAndRun()
 	
-	content := container.New(
-		layout.NewStackLayout(), 
-		loginContainer,
-		cameraContainer,
-		
-	)
-	loginContainer.Show()
-	cameraContainer.Hide()
-
-	w.SetContent(content)
-
-	w.SetMaster()
-
-	w.Canvas().SetOnTypedKey(func(k *fyne.KeyEvent) {
-		log.Println(k.Name)
-		if (cameraContainer.Visible()){
-			mainScreenClass.OnTypedKey(k,startStop)
-		}
-    })
-
-	w.Resize(fyne.NewSize(640, 460))
-	w.ShowAndRun()
 }

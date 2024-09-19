@@ -7,6 +7,8 @@ working_dir="./Scanner.app/Contents/MacOS/"
 executable="io.tualo.bp"
 
 fyne package -os darwin --release
+
+
 mkdir -p "Scanner.app/Contents/MacOS/assets"
 cp assets/*.mp3 "Scanner.app/Contents/MacOS/assets"
 

@@ -8,7 +8,7 @@ require (
 	github.com/bieber/barcode v0.0.0-20230820185446-2e682506f5b4
 	github.com/gopxl/beep v1.4.1
 	github.com/otiai10/gosseract/v2 v2.4.1
-	gocv.io/x/gocv v0.36.1
+	gocv.io/x/gocv v0.38.0
 	gopkg.in/ini.v1 v1.67.0
 )
 

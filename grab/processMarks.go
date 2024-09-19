@@ -89,15 +89,17 @@ func (this *GrabcameraClass) processMarks(paper gocv.Mat){
 				this.setHistoryItem(this.lastBarcode,this.strCurrentBoxBarcode,this.strCurrentStackBarcode,this.currentState)
 				for i := 0; i < len(res.Marks); i++ {
 					if i >= len(this.checkMarkList) {
-						offestX := int(float64(this.lastTesseractResult.PageRois[res.Marks[i].RoiIndex].X) * this.pixelScale)	
-						offestY := int(float64(this.lastTesseractResult.PageRois[res.Marks[i].RoiIndex].Y) * this.pixelScaleY)
-						this.checkMarkList = append(this.checkMarkList, structs.CheckMarkList{
-							Point: image.Point{
-								offestX + res.Marks[i].X, 
-								offestY + res.Marks[i].Y,
-							},
-							Pixelsize: res.Marks[i].Radius,
-						})
+						if len(this.lastTesseractResult.PageRois) > res.Marks[i].RoiIndex {
+							offestX := int(float64(this.lastTesseractResult.PageRois[res.Marks[i].RoiIndex].X) * this.pixelScale)	
+							offestY := int(float64(this.lastTesseractResult.PageRois[res.Marks[i].RoiIndex].Y) * this.pixelScaleY)
+							this.checkMarkList = append(this.checkMarkList, structs.CheckMarkList{
+								Point: image.Point{
+									offestX + res.Marks[i].X, 
+									offestY + res.Marks[i].Y,
+								},
+								Pixelsize: res.Marks[i].Radius,
+							})
+						}
 					}
 					if res.Marks[i].Checked {
 						this.checkMarkList[i].Sum += 1
