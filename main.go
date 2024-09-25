@@ -25,6 +25,7 @@ var configData *config.ConfigurationClass
 var g *globals.GlobalValuesClass
 
 var appID = "io.tualo.bp"
+
 func main() {
 	 
 
