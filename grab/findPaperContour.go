@@ -2,8 +2,9 @@ package grab
 
 import (
 	"image"
-	"gocv.io/x/gocv"
 	"log"
+
+	"gocv.io/x/gocv"
 )
 
 func calculateBestThresh(img gocv.Mat) float32 {
@@ -23,7 +24,7 @@ func calculateBestThresh(img gocv.Mat) float32 {
 
 func (this *GrabcameraClass) findPaperContour(img gocv.Mat) gocv.PointVector {
 
-	factor :=  int(1 / this.globals.PaperFindContourFactor)
+	factor := int(1 / this.globals.PaperFindContourFactor)
 	//vig:=gocv.IMRead("vig.png",gocv.IMReadColor)
 
 	scaled := gocv.NewMat()
@@ -35,7 +36,7 @@ func (this *GrabcameraClass) findPaperContour(img gocv.Mat) gocv.PointVector {
 
 	gocv.Resize(img, &scaled, image.Point{img.Cols() / factor, img.Rows() / factor}, 0, 0, gocv.InterpolationArea)
 	if false {
-		log.Println("findPaperContour",factor,scaled.Cols(),scaled.Rows())
+		log.Println("findPaperContour", factor, scaled.Cols(), scaled.Rows())
 	}
 	blur := gocv.NewMat()
 	gocv.GaussianBlur(scaled, &blur, image.Pt(3, 3), 1, 1, gocv.BorderDefault)
@@ -47,7 +48,6 @@ func (this *GrabcameraClass) findPaperContour(img gocv.Mat) gocv.PointVector {
 	}
 	for i := 0; i < countChannels; i++ {
 
-		
 		eroded := gocv.NewMat()
 		kernel := gocv.Ones(5, 5, gocv.MatTypeCV8U)
 		gocv.MorphologyExWithParams(channels[i], &eroded, gocv.MorphErode, kernel, 3, gocv.BorderDefault)
@@ -67,12 +67,12 @@ func (this *GrabcameraClass) findPaperContour(img gocv.Mat) gocv.PointVector {
 		kernel.Close()
 		d.Close()
 		imgThresh.Close()
-		 
 
 	}
 
 	gocv.Add(channels[0], channels[1], &merged)
-	gocv.Add(merged, channels[2], &merged)
+	// gocv.Add(merged, channels[2], &merged)
+	gocv.AddWeighted(merged, 1.0, channels[2], 1.5, 0.0, &merged)
 
 	gocv.Threshold(merged, &merged, 100, 255, gocv.ThresholdBinary+gocv.ThresholdOtsu)
 
