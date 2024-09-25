@@ -39,13 +39,27 @@ func (this *GrabcameraClass) findPaperContour(img gocv.Mat) gocv.PointVector {
 		log.Println("findPaperContour", factor, scaled.Cols(), scaled.Rows())
 	}
 	blur := gocv.NewMat()
-	gocv.GaussianBlur(scaled, &blur, image.Pt(3, 3), 1, 1, gocv.BorderDefault)
+	gocv.GaussianBlur(scaled, &blur, image.Pt(15, 15), 1, 1, gocv.BorderDefault)
 
-	channels := gocv.Split(scaled)
+	/*
+		channels := gocv.Split(scaled)
+		countChannels := len(channels)
+		if countChannels > 3 {
+			countChannels = 3
+		}
+
+		mat1 := gocv.NewMat()
+		gocv.AddWeighted(channels[0], 1.0, channels[1], 1.0, 0.0, &mat1)
+		gocv.AddWeighted(mat1, 1.0, channels[2], 2.2, 0.0, &mat1)
+		gocv.IMWrite("sample.png", mat1)
+	*/
+
+	channels := gocv.Split(blur)
 	countChannels := len(channels)
 	if countChannels > 3 {
 		countChannels = 3
 	}
+
 	for i := 0; i < countChannels; i++ {
 
 		eroded := gocv.NewMat()
@@ -55,7 +69,7 @@ func (this *GrabcameraClass) findPaperContour(img gocv.Mat) gocv.PointVector {
 		imgThresh := gocv.NewMat()
 
 		gocv.Dilate(channels[i], &d, gocv.GetStructuringElement(gocv.MorphEllipse, image.Pt(3, 3)))
-		gocv.Threshold(d, &imgThresh, 100, 255, gocv.ThresholdBinary+gocv.ThresholdOtsu)
+		gocv.Threshold(d, &imgThresh, 240, 255, gocv.ThresholdBinary+gocv.ThresholdOtsu)
 		gocv.Erode(imgThresh, &imgThresh, gocv.GetStructuringElement(gocv.MorphEllipse, image.Pt(5, 5)))
 
 		gocv.Dilate(imgThresh, &imgThresh, gocv.GetStructuringElement(gocv.MorphEllipse, image.Pt(3, 3)))
@@ -70,9 +84,11 @@ func (this *GrabcameraClass) findPaperContour(img gocv.Mat) gocv.PointVector {
 
 	}
 
-	gocv.Add(channels[0], channels[1], &merged)
-	// gocv.Add(merged, channels[2], &merged)
-	gocv.AddWeighted(merged, 1.0, channels[2], 1.5, 0.0, &merged)
+	if countChannels == 3 {
+		gocv.Add(channels[0], channels[1], &merged)
+		gocv.Add(merged, channels[2], &merged)
+		// gocv.AddWeighted(merged, 1.0, channels[2], 1.5, 0.0, &merged)
+	}
 
 	gocv.Threshold(merged, &merged, 100, 255, gocv.ThresholdBinary+gocv.ThresholdOtsu)
 
