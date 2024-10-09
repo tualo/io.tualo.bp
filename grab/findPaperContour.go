@@ -23,6 +23,112 @@ func calculateBestThresh(img gocv.Mat) float32 {
 }
 
 func (this *GrabcameraClass) findPaperContour(img gocv.Mat) gocv.PointVector {
+	result := gocv.NewPointVector()
+	scaled := gocv.NewMat()
+	blur := gocv.NewMat()
+	eroded := gocv.NewMat()
+	morphMatSize := 5
+
+	kernel := gocv.Ones(morphMatSize, morphMatSize, gocv.MatTypeCV8U)
+	factor := int(1 / this.globals.PaperFindContourFactor)
+	noiseBlurSize := this.globals.PaperFindContourNoiseBlurSize
+	erodeDillateSize := this.globals.ErodeDillateSize
+
+	if noiseBlurSize%2 == 0 {
+		noiseBlurSize++
+	}
+	if erodeDillateSize%2 == 0 {
+		erodeDillateSize++
+	}
+
+	gocv.Resize(img, &scaled, image.Point{img.Cols() / factor, img.Rows() / factor}, 0, 0, gocv.InterpolationArea) // faster detection
+	gocv.GaussianBlur(scaled, &blur, image.Pt(noiseBlurSize, noiseBlurSize), 0, 0, gocv.BorderDefault)             // reduce noise
+	channels := gocv.Split(blur)
+	merged := gocv.NewMat()
+	countChannels := len(channels)
+	if countChannels > 3 {
+		countChannels = 3
+	}
+
+	for i := 0; i < countChannels; i++ {
+		if ((this.globals.FindContourChannelMask) & ((1) << i)) != 0 {
+			gocv.MorphologyExWithParams(channels[i], &eroded, gocv.MorphErode, kernel, 3, gocv.BorderDefault)
+			if this.globals.ShowImage == 501 {
+				pImage := gocv.NewMat()
+				gocv.CvtColor(eroded, &pImage, gocv.ColorGrayToBGR)
+				this.pipeUIImage(pImage)
+				pImage.Close()
+			}
+
+			d := gocv.NewMat()
+			imgThresh := gocv.NewMat()
+
+			gocv.Dilate(channels[i], &d, gocv.GetStructuringElement(gocv.MorphEllipse, image.Pt(erodeDillateSize, erodeDillateSize)))
+			gocv.Threshold(d, &imgThresh, 140, 255, gocv.ThresholdBinary+gocv.ThresholdOtsu)
+			gocv.Erode(imgThresh, &imgThresh, gocv.GetStructuringElement(gocv.MorphEllipse, image.Pt(erodeDillateSize, erodeDillateSize)))
+			//gocv.Dilate(imgThresh, &imgThresh, gocv.GetStructuringElement(gocv.MorphEllipse, image.Pt(13, 13)))
+
+			if merged.Empty() {
+				merged = imgThresh.Clone()
+			} else {
+				gocv.Add(merged, imgThresh, &merged)
+			}
+
+			channels[i].Close()
+			channels[i] = imgThresh.Clone()
+
+			if this.globals.ShowImage == 502 {
+				pImage := gocv.NewMat()
+				gocv.CvtColor(imgThresh, &pImage, gocv.ColorGrayToBGR)
+				this.pipeUIImage(pImage)
+				pImage.Close()
+			}
+			imgThresh.Close()
+			d.Close()
+
+		}
+
+	}
+
+	contours := gocv.FindContours(merged, gocv.RetrievalCComp, gocv.ChainApproxSimple)
+	maxArea := 0.0
+	maxContourIndex := -1
+	for i := 0; i < contours.Size(); i++ {
+		contourArea := gocv.ContourArea(contours.At(i))
+		if contourArea > maxArea {
+			maxArea = contourArea
+			maxContourIndex = i
+		}
+	}
+	var points []image.Point
+	if maxContourIndex != -1 {
+		points = contours.At(maxContourIndex).ToPoints()
+
+		for i := 0; i < len(points); i++ {
+			points[i].X *= factor
+			points[i].Y *= factor
+		}
+		result = gocv.NewPointVectorFromPoints(points)
+	}
+
+	// clean up
+	for i := 0; i < len(channels); i++ {
+		channels[i].Close()
+	}
+
+	scaled.Close()
+	blur.Close()
+	eroded.Close()
+	kernel.Close()
+
+	merged.Close()
+	contours.Close()
+
+	return result
+
+}
+
+func (this *GrabcameraClass) findPaperContourX(img gocv.Mat) gocv.PointVector {
 
 	factor := int(1 / this.globals.PaperFindContourFactor)
 	//vig:=gocv.IMRead("vig.png",gocv.IMReadColor)
@@ -90,7 +196,9 @@ func (this *GrabcameraClass) findPaperContour(img gocv.Mat) gocv.PointVector {
 		// gocv.AddWeighted(merged, 1.0, channels[2], 1.5, 0.0, &merged)
 	}
 
-	gocv.Threshold(merged, &merged, 100, 255, gocv.ThresholdBinary+gocv.ThresholdOtsu)
+	// gocv.AddWeighted(channels[0], 1.0, channels[2], 1.5, 0.0, &merged)
+
+	gocv.Threshold(merged, &merged, 10, 255, gocv.ThresholdBinary+gocv.ThresholdOtsu)
 
 	contours := gocv.FindContours(merged, gocv.RetrievalCComp, gocv.ChainApproxSimple)
 

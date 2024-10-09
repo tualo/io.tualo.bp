@@ -5,7 +5,9 @@ import (
 	"image"
 	"image/color"
 	"log"
+	"math"
 	"os"
+	"sort"
 	"strings"
 	"time"
 
@@ -21,6 +23,11 @@ func fileformatBytes(img gocv.Mat) []byte {
 		return nil
 	}
 	return buffer.GetBytes()
+}
+
+type SortIndexDistance struct {
+	Index    int
+	Distance float64
 }
 
 func (this *GrabcameraClass) uniqueCharacters(str string) string {
@@ -76,16 +83,69 @@ func (this *GrabcameraClass) tesseract(img gocv.Mat, currentOCRChannel chan stri
 
 	documentConfigurations := this.documentConfigurations
 
+	/*
+		for i := 0; i < len(documentConfigurations); i++ {
+
+			log.Println("ID", documentConfigurations[i].Titles[0])
+			log.Println("PageSize", fmt.Sprintf("%.3f", float64(documentConfigurations[i].Pagesize.Width)/float64(documentConfigurations[i].Pagesize.Height)))
+			log.Println("PaperSize", fmt.Sprintf("%.3f", float64(img.Cols())/float64(img.Rows())))
+
+		}
+	*/
+
+	indexSort := []SortIndexDistance{}
 	for i := 0; i < len(documentConfigurations); i++ {
 
-		result.CircleSize = documentConfigurations[i].CircleSize
-		result.CircleMinDistance = documentConfigurations[i].CircleMinDistance
-		result.Pagesize = documentConfigurations[i].Pagesize
+		/*
+			itm := SortIndexDistance{
+				int(math.Abs(
+					math.Round(float64(img.Cols())/float64(img.Rows())*100) -
+						math.Round(float64(documentConfigurations[i].Pagesize.Width)/float64(documentConfigurations[i].Pagesize.Height)*100),
+				)), i,
+			}
+		*/
+		itm := SortIndexDistance{}
+		itm.Distance = math.Abs(float64(img.Cols())/float64(img.Rows()) - float64(documentConfigurations[i].Pagesize.Width)/float64(documentConfigurations[i].Pagesize.Height))
+		itm.Index = i
 
-		X := documentConfigurations[i].TitleRegion.X * img.Cols() / result.Pagesize.Width
-		Y := documentConfigurations[i].TitleRegion.Y * img.Rows() / result.Pagesize.Height
-		W := documentConfigurations[i].TitleRegion.Width * img.Cols() / result.Pagesize.Width
-		H := documentConfigurations[i].TitleRegion.Height * img.Rows() / result.Pagesize.Height
+		indexSort = append(indexSort, itm)
+	}
+	log.Println("Unsorted", indexSort)
+
+	sort.SliceStable(indexSort, func(i, j int) bool {
+		return indexSort[i].Distance < indexSort[j].Distance
+	})
+
+	log.Println("Sorted", indexSort)
+
+	for i := 0; i < len(indexSort); i++ {
+
+		currentCocumentConfigurations := documentConfigurations[indexSort[i].Index]
+		/*
+
+			log.Println("PaperSize", fmt.Sprintf("%.3f", float64(img.Cols())/float64(img.Rows())))
+		*/
+
+		log.Println(
+			"PR",
+			i,
+			indexSort[i].Index,
+			indexSort[i].Distance,
+			math.Round(float64(img.Cols())/float64(img.Rows())*10)-
+				math.Round(float64(currentCocumentConfigurations.Pagesize.Width)/float64(currentCocumentConfigurations.Pagesize.Height)*10),
+			currentCocumentConfigurations.Titles[0],
+		)
+
+		//if math.Round(float64(img.Cols())/float64(img.Rows())*100) == math.Round(float64(currentCocumentConfigurations.Pagesize.Width)/float64(currentCocumentConfigurations.Pagesize.Height)*100) {
+
+		result.CircleSize = currentCocumentConfigurations.CircleSize
+		result.CircleMinDistance = currentCocumentConfigurations.CircleMinDistance
+		result.Pagesize = currentCocumentConfigurations.Pagesize
+
+		X := currentCocumentConfigurations.TitleRegion.X * img.Cols() / result.Pagesize.Width
+		Y := currentCocumentConfigurations.TitleRegion.Y * img.Rows() / result.Pagesize.Height
+		W := currentCocumentConfigurations.TitleRegion.Width * img.Cols() / result.Pagesize.Width
+		H := currentCocumentConfigurations.TitleRegion.Height * img.Rows() / result.Pagesize.Height
 
 		croppedMat := img.Region(image.Rect(X, Y, W+X, H+Y))
 
@@ -98,9 +158,15 @@ func (this *GrabcameraClass) tesseract(img gocv.Mat, currentOCRChannel chan stri
 			return result
 		}
 
+		if this.globals.ShowImage == 601 {
+			pImage := croppedMat.Clone()
+			this.pipeUIImage(pImage)
+			pImage.Close()
+		}
+
 		whiteListCharactes := ""
-		for j := 0; j < len(documentConfigurations[i].Titles); j++ {
-			whiteListCharactes += documentConfigurations[i].Titles[j]
+		for j := 0; j < len(currentCocumentConfigurations.Titles); j++ {
+			whiteListCharactes += currentCocumentConfigurations.Titles[j]
 		}
 		// log.Println("SetWhitelist",whiteListCharactes)
 		// this.uniqueCharacters(whiteListCharactes)
@@ -143,17 +209,17 @@ func (this *GrabcameraClass) tesseract(img gocv.Mat, currentOCRChannel chan stri
 			}
 			currentOCRChannel <- searchFor
 
-			// fmt.Println("searchFor %s %d",searchFor , len(documentConfigurations[i].Titles))
-			for j := 0; j < len(documentConfigurations[i].Titles); j++ {
-				distance := levenshtein.ComputeDistance(searchFor, this.printableCharacters(documentConfigurations[i].Titles[j]))
-				errorRate := float64(distance) /*- float64(len( documentConfigurations[i].Titles[j])-len(searchFor)))*/ / float64(len(this.printableCharacters(documentConfigurations[i].Titles[j])))
+			// fmt.Println("searchFor %s %d",searchFor , len(currentCocumentConfigurations.Titles))
+			for j := 0; j < len(currentCocumentConfigurations.Titles); j++ {
+				distance := levenshtein.ComputeDistance(searchFor, this.printableCharacters(currentCocumentConfigurations.Titles[j]))
+				errorRate := float64(distance) /*- float64(len( currentCocumentConfigurations.Titles[j])-len(searchFor)))*/ / float64(len(this.printableCharacters(currentCocumentConfigurations.Titles[j])))
 
-				if strings.Contains(searchFor, this.printableCharacters(documentConfigurations[i].Titles[j])) {
+				if strings.Contains(searchFor, this.printableCharacters(currentCocumentConfigurations.Titles[j])) {
 					errorRate = 0
 				}
-				log.Println("ErrorRate:", errorRate, "Seacrch:", searchFor, this.printableCharacters(documentConfigurations[i].Titles[j]))
-				if errorRate < 0.3 {
-					result.Title = documentConfigurations[i].Titles[j]
+				log.Println("ErrorRate:", errorRate, "Search:", searchFor, this.printableCharacters(currentCocumentConfigurations.Titles[j]))
+				if errorRate < 0.5 {
+					result.Title = currentCocumentConfigurations.Titles[j]
 
 					//title = out[0].Word
 					drawContours := gocv.NewPointsVector()
@@ -164,12 +230,12 @@ func (this *GrabcameraClass) tesseract(img gocv.Mat, currentOCRChannel chan stri
 						image.Point{out[0].Box.Min.X, out[0].Box.Max.Y}})
 					drawContours.Append(contour)
 					gocv.DrawContours(&croppedMat, drawContours, -1, color.RGBA{0, 255, 0, 0}, 2)
-					result.Point = image.Point{documentConfigurations[i].TitleRegion.X, documentConfigurations[i].TitleRegion.Y}
+					result.Point = image.Point{currentCocumentConfigurations.TitleRegion.X, currentCocumentConfigurations.TitleRegion.Y}
 
 					if false {
 						fmt.Sprintf("ocr %s %d %d %d", time.Since(start), croppedMat.Cols(), croppedMat.Rows(), os.Getpid())
 					}
-					result.PageRois = documentConfigurations[i].Rois
+					result.PageRois = currentCocumentConfigurations.Rois
 					croppedMat.Close()
 					drawContours.Close()
 					smaller.Close()
@@ -181,6 +247,8 @@ func (this *GrabcameraClass) tesseract(img gocv.Mat, currentOCRChannel chan stri
 		}
 		croppedMat.Close()
 		smaller.Close()
+		//}
+
 	}
 
 	return result
