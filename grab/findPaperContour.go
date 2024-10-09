@@ -90,6 +90,13 @@ func (this *GrabcameraClass) findPaperContour(img gocv.Mat) gocv.PointVector {
 
 	}
 
+	if this.globals.ShowImage == 503 {
+		pImage := gocv.NewMat()
+		gocv.CvtColor(merged, &pImage, gocv.ColorGrayToBGR)
+		this.pipeUIImage(pImage)
+		pImage.Close()
+	}
+
 	contours := gocv.FindContours(merged, gocv.RetrievalCComp, gocv.ChainApproxSimple)
 	maxArea := 0.0
 	maxContourIndex := -1

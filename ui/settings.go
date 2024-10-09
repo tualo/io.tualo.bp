@@ -228,7 +228,8 @@ func (this *SettingsScreenClass) makeSettingsForm() fyne.CanvasObject {
 	}{
 		{"Standard", 0},
 		{"Channel Image", 501},
-		{"Eroded", 502},
+		{"Eroded Last Channel", 502},
+		{"Merged", 503},
 		{"TesseractROI", 601},
 		{"ROIs", 701},
 	}
