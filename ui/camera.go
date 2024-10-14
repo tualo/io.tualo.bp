@@ -54,6 +54,7 @@ type MainScreenClass struct {
 	settingsContainer   *fyne.Container
 	showImage           bool
 	onLogout            func()
+	onStartStopCamera   func()
 
 	channel       chan gocv.Mat
 	boxBarcode    chan string
@@ -166,6 +167,8 @@ func (t *MainScreenClass) SendQueuedItems() {
 						log.Println("SendReading OK", res.Success, len(t.sendImageQueue))
 					} else {
 						dialog.ShowInformation("Fehler", res.Msg, t.TopWindow)
+						t.onStartStopCamera()
+						t.PlayAlert1()
 					}
 				}
 			}
@@ -257,11 +260,17 @@ func (t *MainScreenClass) RedrawImage() {
 				for i := 0; i < len(t.historyData); i++ {
 					if t.historyData[i].Barcode == histItem.Barcode {
 						found = true
-						t.historyData[i] = histItem
+						if t.historyData[i].State != "sendDone" {
+							t.historyData[i] = histItem
+						}
+						if histItem.State == "escaped" {
+							t.historyData[i] = histItem
+						}
 						break
 					}
 				}
 				if !found {
+
 					if len(t.historyData) > 0 {
 						if t.historyData[len(t.historyData)-1].State != "sendDone" {
 							t.PlayAlert1()
@@ -514,6 +523,7 @@ func (t *MainScreenClass) OnTypedKey(k *fyne.KeyEvent, onStartStopCamera func())
 }
 
 func (t *MainScreenClass) CreateContainer(onStartStopCamera func()) *fyne.Container {
+	t.onStartStopCamera = onStartStopCamera
 	container := container.New(
 		layout.NewPaddedLayout(),
 		t.makeOuterContainer(onStartStopCamera),

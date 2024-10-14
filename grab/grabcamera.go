@@ -72,19 +72,19 @@ func (this *GrabcameraClass) SetGlobalValues(globals *globals.GlobalValuesClass)
 	this.globals = globals
 
 	/*
-	if this.globals.GaussianBlurFindCircles%2 != 1 {
-		this.globals.GaussianBlurFindCircles++
-	}
-	
+		if this.globals.GaussianBlurFindCircles%2 != 1 {
+			this.globals.GaussianBlurFindCircles++
+		}
 
-	if this.globals.AdaptiveThresholdBlockSize%2 != 1 {
-		this.globals.AdaptiveThresholdBlockSize++
-	}
 
-	if this.globals.AdaptiveThresholdBlockSize < 3 {
-		this.globals.AdaptiveThresholdBlockSize = 3
-	}
-*/
+		if this.globals.AdaptiveThresholdBlockSize%2 != 1 {
+			this.globals.AdaptiveThresholdBlockSize++
+		}
+
+		if this.globals.AdaptiveThresholdBlockSize < 3 {
+			this.globals.AdaptiveThresholdBlockSize = 3
+		}
+	*/
 }
 
 func (this *GrabcameraClass) GetCameraList() []structs.CameraList {
@@ -153,12 +153,11 @@ func (this *GrabcameraClass) Grabcamera() {
 			webcam.Set(gocv.VideoCaptureFrameHeight, float64(this.globals.ForcedCameraHeight))
 		}
 
-		webcam.Set(gocv.VideoCaptureFrameWidth, webcam.Get(gocv.VideoCaptureFrameWidth) *  this.globals.CaptureFrameFactor)
-		webcam.Set(gocv.VideoCaptureFrameHeight, webcam.Get(gocv.VideoCaptureFrameHeight) *  this.globals.CaptureFrameFactor)
-		webcam.Set(gocv.VideoCaptureFPS,  this.globals.CaptureFPS )
+		webcam.Set(gocv.VideoCaptureFrameWidth, webcam.Get(gocv.VideoCaptureFrameWidth)*this.globals.CaptureFrameFactor)
+		webcam.Set(gocv.VideoCaptureFrameHeight, webcam.Get(gocv.VideoCaptureFrameHeight)*this.globals.CaptureFrameFactor)
+		webcam.Set(gocv.VideoCaptureFPS, this.globals.CaptureFPS)
 
 		fmt.Println("Open camera", this.globals.IntCamera, webcam.Get(gocv.VideoCaptureFPS), webcam.Get(gocv.VideoCaptureFrameWidth), webcam.Get(gocv.VideoCaptureFrameHeight))
-		
 
 		if err != nil {
 			fmt.Println("Error opening capture device: ", 0)
@@ -175,6 +174,23 @@ func (this *GrabcameraClass) Grabcamera() {
 		checkMarkList := []CheckMarkList{}
 		lastReturnType := ReturnType{}
 	*/
+
+	if len(this.paperChannelImage) > 0 {
+		mat, _ := <-this.paperChannelImage
+		mat.Close()
+	}
+
+	this.tesseractNeeded = true
+	this.doFindCircles = false
+
+	this.lastTesseractResult = structs.TesseractReturnType{}
+	this.checkMarkList = []structs.CheckMarkList{}
+	this.debugMarkList = []structs.CheckMarkList{}
+	this.currentBallotPaperId = 0
+	this.currentState = structs.ImageProcessorState{}
+	this.currentState = this.setState("default", this.currentState)
+	this.sendNeeded = true
+
 	this.globals.Save()
 	for this.runVideo {
 		start := time.Now()
