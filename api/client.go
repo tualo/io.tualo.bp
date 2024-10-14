@@ -1,15 +1,16 @@
 package api
 
 import (
-	"io"
+	"encoding/json"
 	"fmt"
+	"io"
+	"log"
 	"net"
 	"net/http"
 	"net/http/cookiejar"
 	"strings"
 	"time"
-	"encoding/json"
-	"log"
+
 	structs "io.tualo.bp/structs"
 )
 
@@ -26,7 +27,7 @@ func dialTimeout(network, addr string) (net.Conn, error) {
 
 func InitJar() {
 	if Jar == nil {
-		jar, err := cookiejar.New(&cookiejar.Options{ })
+		jar, err := cookiejar.New(&cookiejar.Options{})
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -45,7 +46,7 @@ func Get(url string) (string, error) {
 	}
 	client := http.Client{
 		Transport: &transport,
-		Jar: Jar,
+		Jar:       Jar,
 	}
 	var resp *http.Response
 	var err error
@@ -65,7 +66,7 @@ func Post(url string, data string) (string, error) {
 	}
 	client := http.Client{
 		Transport: &transport,
-		Jar: Jar,
+		Jar:       Jar,
 	}
 	var resp *http.Response
 	var err error
@@ -74,7 +75,7 @@ func Post(url string, data string) (string, error) {
 		"application/x-www-form-urlencoded",
 		strings.NewReader(data))
 	if err != nil {
-		log.Println("Post ERROR",err)
+		log.Println("Post ERROR", err)
 		return "", err
 	}
 
@@ -87,51 +88,60 @@ func Post(url string, data string) (string, error) {
 
 func Login(url string, username string, password string) (LoginResponse, error) {
 	var loginResponse LoginResponse
-	sb,err := Post(url, "forcelogin=1&username="+username+"&password="+password+"")
+	sb, err := Post(url, "forcelogin=1&username="+username+"&password="+password+"")
 	json.Unmarshal([]byte(sb), &loginResponse)
 	return loginResponse, err
 }
 
-
-func Ping( ) (PingResponse, error) {
+func Ping() (PingResponse, error) {
 	var response PingResponse
-	sb,err := Get(systemURL+"dashboard/ping")
+	sb, err := Get(systemURL + "dashboard/ping")
 	json.Unmarshal([]byte(sb), &response)
 	return response, err
 }
 
-
-func GetKandidaten( ) (KandidatenResponse, error) {
+func GetKandidaten() (KandidatenResponse, error) {
 	var response KandidatenResponse
-	sb,err := Get(systemURL+"ds/kandidaten/read")
+	sb, err := Get(systemURL + "ds/kandidaten/read")
 	json.Unmarshal([]byte(sb), &response)
 	return response, err
 }
 
-func GetConfig( ) (structs.DocumentConfigurations, error) {
+func GetConfig() (structs.DocumentConfigurations, error) {
 	var response structs.DocumentConfigurations
-	sb,err := Get(systemURL+"papervote/opticaldata/config")
-	json.Unmarshal([]byte(sb), &response)
-	//log.Println("GetConfig",response)
+	sb, err := Get(systemURL + "papervote/opticaldata/config")
+
+	if err != nil {
+		log.Println("GetConfig ERROR", err)
+	} else {
+		json.Unmarshal([]byte(sb), &response)
+	}
+
 	return response, err
 }
 
-
-func SendReading( boxbarcode string, stackbarcode string, barcode string, id int, marks string,image string) (KandidatenResponse, error) {
+func SendReading(boxbarcode string, stackbarcode string, barcode string, id int, marks string, image string) (KandidatenResponse, error) {
 	var response KandidatenResponse
-	data := "boxbarcode="+boxbarcode+"&stackbarcode="+stackbarcode+"&barcode="+barcode+"&id="+fmt.Sprintf("%d", id)+"&marks="+marks+"&image="+image
+	data := "boxbarcode=" + boxbarcode + "&stackbarcode=" + stackbarcode + "&barcode=" + barcode + "&id=" + fmt.Sprintf("%d", id) + "&marks=" + marks + "&image=" + image
 	// log.Println("SendReading",data)
-	sb,err := Post(systemURL+"papervote/opticaldata",data)
-	json.Unmarshal([]byte(sb), &response)
-	
-	
+	sb, err := Post(systemURL+"papervote/opticaldata", data)
+
+	if err != nil {
+		log.Println("SendReading ERROR", err)
+	} else {
+		json.Unmarshal([]byte(sb), &response)
+	}
+
 	return response, err
 }
 
-
-func SendDetectedCodes( boxbarcode string, stackbarcode string, barcode string  ) (KandidatenResponse, error) {
+func SendDetectedCodes(boxbarcode string, stackbarcode string, barcode string) (KandidatenResponse, error) {
 	var response KandidatenResponse
-	sb,err := Get(systemURL+"papervoteoptical/"+boxbarcode+"/"+stackbarcode+"/"+barcode)
-	json.Unmarshal([]byte(sb), &response)
+	sb, err := Get(systemURL + "papervoteoptical/" + boxbarcode + "/" + stackbarcode + "/" + barcode)
+	if err != nil {
+		log.Println("SendDetectedCodes ERROR", err)
+	} else {
+		json.Unmarshal([]byte(sb), &response)
+	}
 	return response, err
 }

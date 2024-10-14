@@ -1,25 +1,28 @@
 package ui
 
 import (
-	"fyne.io/fyne/v2"
-	"fyne.io/fyne/v2/container"
-	"fyne.io/fyne/v2/layout"
-	"fyne.io/fyne/v2/widget"
-	"fyne.io/fyne/v2/theme"
-	"fyne.io/fyne/v2/canvas"
 	"image"
 	"image/color"
-	"gocv.io/x/gocv"
 	"time"
 
+	"fyne.io/fyne/v2"
+	"fyne.io/fyne/v2/canvas"
+	"fyne.io/fyne/v2/container"
+	"fyne.io/fyne/v2/dialog"
+	"fyne.io/fyne/v2/layout"
+	"fyne.io/fyne/v2/theme"
+	"fyne.io/fyne/v2/widget"
+	"gocv.io/x/gocv"
+
 	// assets "io.tualo.bp/assets"
+	api "io.tualo.bp/api"
 	globals "io.tualo.bp/globals"
 	structs "io.tualo.bp/structs"
-	api "io.tualo.bp/api"
-	
-	"log"
+
 	"bytes"
 	"io/ioutil"
+	"log"
+
 	//"os"
 	"fmt"
 
@@ -31,44 +34,42 @@ import (
 )
 
 type MainScreenClass struct {
-	playState bool
-	button *widget.Button
-	informButton *widget.Button
-	globals *globals.GlobalValuesClass
-	fullNameWidget *widget.Label
-	boxLabelWidget *widget.Label
-	stackLabelWidget *widget.Label
+	playState         bool
+	button            *widget.Button
+	informButton      *widget.Button
+	globals           *globals.GlobalValuesClass
+	fullNameWidget    *widget.Label
+	boxLabelWidget    *widget.Label
+	stackLabelWidget  *widget.Label
 	ballotLabelWidget *widget.Label
 
-	list *widget.List
+	list        *widget.List
 	historyData []structs.HistoryListItem
 
-	ocrLabelWidget *widget.Label
+	ocrLabelWidget   *widget.Label
 	stateLabelWidget *widget.Label
 
-	displayImage *canvas.Image
+	displayImage        *canvas.Image
 	settingsScreenClass *SettingsScreenClass
-	settingsContainer *fyne.Container
-	showImage bool
-	onLogout func()
+	settingsContainer   *fyne.Container
+	showImage           bool
+	onLogout            func()
 
-	channel chan gocv.Mat
-	boxBarcode chan string
-	stackBarcode chan string
+	channel       chan gocv.Mat
+	boxBarcode    chan string
+	stackBarcode  chan string
 	ballotBarcode chan string
-	escapedImage chan bool
+	escapedImage  chan bool
 
-
-	currentStateChannel chan string
-	currentOCRChannel chan string
-	listItemChannel chan structs.HistoryListItem
+	currentStateChannel  chan string
+	currentOCRChannel    chan string
+	listItemChannel      chan structs.HistoryListItem
 	detectedCodesChannel chan structs.DetectedCodes
-	sendImageQueue chan structs.SendImageQueueItem
+	sendImageQueue       chan structs.SendImageQueueItem
 
-
-
-	ticker *time.Ticker
-	main fyne.CanvasObject
+	ticker    *time.Ticker
+	main      fyne.CanvasObject
+	TopWindow fyne.Window
 
 	alert1 beep.StreamSeekCloser
 	alert2 beep.StreamSeekCloser
@@ -76,16 +77,13 @@ type MainScreenClass struct {
 }
 
 func (t *MainScreenClass) initializeSounds() {
-	
 
 }
 
 func (t *MainScreenClass) PlayAlert1() {
 
-	var format beep.Format;
+	var format beep.Format
 
-
-	
 	// f, err := os.Open("assets/sms-alert-1-daniel_simon.mp3")
 	/*var file *os.File
 	f, err := file.Read(resourceSmsAlert1DanielsimonMp3.StaticContent)
@@ -95,7 +93,7 @@ func (t *MainScreenClass) PlayAlert1() {
 	*/
 	var err error
 
-	buf:=bytes.NewBuffer(resourceSmsAlert1DanielsimonMp3.StaticContent)
+	buf := bytes.NewBuffer(resourceSmsAlert1DanielsimonMp3.StaticContent)
 	clsr := ioutil.NopCloser(buf)
 	t.alert1, format, err = mp3.Decode(clsr)
 	if err != nil {
@@ -103,9 +101,8 @@ func (t *MainScreenClass) PlayAlert1() {
 	}
 
 	if true {
-		log.Println("format",format)
+		log.Println("format", format)
 	}
-
 
 	defer t.alert1.Close()
 
@@ -122,13 +119,13 @@ func (t *MainScreenClass) SetOnLogout(onLogout func()) {
 }
 
 func (t *MainScreenClass) SetChannel(
-	channel chan gocv.Mat, 
-	boxBarcode chan string, 
-	stackBarcode chan string, 
-	ballotBarcode chan string, 
-	escapedImage chan bool, 
-	currentStateChannel chan string, 
-	currentOCRChannel chan string, 
+	channel chan gocv.Mat,
+	boxBarcode chan string,
+	stackBarcode chan string,
+	ballotBarcode chan string,
+	escapedImage chan bool,
+	currentStateChannel chan string,
+	currentOCRChannel chan string,
 	listItemChannel chan structs.HistoryListItem,
 	detectedCodesChannel chan structs.DetectedCodes,
 	sendImageQueue chan structs.SendImageQueueItem,
@@ -144,17 +141,15 @@ func (t *MainScreenClass) SetChannel(
 	t.detectedCodesChannel = detectedCodesChannel
 	t.sendImageQueue = sendImageQueue
 
-
-
 }
 
 func (t *MainScreenClass) SendQueuedItems() {
 
 	for range t.ticker.C {
-		if len(t.sendImageQueue)>0 {
-			item,ok1 := <- t.sendImageQueue
+		if len(t.sendImageQueue) > 0 {
+			item, ok1 := <-t.sendImageQueue
 			if ok1 {
-				res,err := api.SendReading(
+				res, err := api.SendReading(
 					item.BoxBarcode,
 					item.StackBarcode,
 					item.Barcode,
@@ -162,11 +157,16 @@ func (t *MainScreenClass) SendQueuedItems() {
 					item.Marks,
 					item.Image,
 				)
-				
+
 				if err != nil {
-					log.Println("SendReading ERROR",err)
-				}else{
-					log.Println("SendReading OK",res.Success, len(t.sendImageQueue))
+					log.Println("SendReading ERROR", err)
+					dialog.ShowError(err, t.TopWindow)
+				} else {
+					if res.Success {
+						log.Println("SendReading OK", res.Success, len(t.sendImageQueue))
+					} else {
+						dialog.ShowInformation("Fehler", res.Msg, t.TopWindow)
+					}
 				}
 			}
 		}
@@ -175,39 +175,35 @@ func (t *MainScreenClass) SendQueuedItems() {
 }
 
 func (t *MainScreenClass) SendDetectedCodes() {
-	
 
 	for range t.ticker.C {
 
-		if len(t.detectedCodesChannel)>0 {
-			detect,ok1 := <- t.detectedCodesChannel
+		if len(t.detectedCodesChannel) > 0 {
+			detect, ok1 := <-t.detectedCodesChannel
 			if ok1 {
-				res,err := api.SendDetectedCodes(
+				res, err := api.SendDetectedCodes(
 					detect.BoxBarcode,
 					detect.StackBarcode,
 					detect.Barcode,
 				)
-				
+
 				if err != nil {
-					log.Println("SendDetectedCodes ERROR",err)
-				}else{
-					log.Println("SendDetectedCodes OK",res.Success)
+					log.Println("SendDetectedCodes ERROR", err)
+				} else {
+					log.Println("SendDetectedCodes OK", res.Success)
 				}
 			}
 		}
-		
 
 	}
 }
 
-
 func (t *MainScreenClass) RedrawImage() {
-	
 
 	for range t.ticker.C {
 
-		if len(t.channel)>0 {
-			img,ok1 := <- t.channel
+		if len(t.channel) > 0 {
+			img, ok1 := <-t.channel
 			if ok1 {
 				t.displayImage.Image = t.matToImage(img)
 				t.displayImage.Refresh()
@@ -215,71 +211,69 @@ func (t *MainScreenClass) RedrawImage() {
 			}
 		}
 
-		if len(t.boxBarcode)>0 {
-			boxBarcode,ok2 := <- t.boxBarcode
+		if len(t.boxBarcode) > 0 {
+			boxBarcode, ok2 := <-t.boxBarcode
 			if ok2 {
-				t.boxLabelWidget.SetText("Kiste: "+boxBarcode)
+				t.boxLabelWidget.SetText("Kiste: " + boxBarcode)
 			}
 		}
 
-		if len(t.stackBarcode)>0 {
-			stackBarcode,ok3 := <- t.stackBarcode
+		if len(t.stackBarcode) > 0 {
+			stackBarcode, ok3 := <-t.stackBarcode
 			if ok3 {
-				t.stackLabelWidget.SetText("Stapel: "+stackBarcode)
+				t.stackLabelWidget.SetText("Stapel: " + stackBarcode)
 			}
 		}
 
-		if len(t.ballotBarcode)>0 {
-			ballotBarcode,ok4 := <- t.ballotBarcode
+		if len(t.ballotBarcode) > 0 {
+			ballotBarcode, ok4 := <-t.ballotBarcode
 			if ok4 {
-				t.ballotLabelWidget.SetText("Stimmzettel: "+ballotBarcode)
+				t.ballotLabelWidget.SetText("Stimmzettel: " + ballotBarcode)
 			}
 		}
 
-		if len(t.currentStateChannel)>0 {
-			stateText,ok5 := <- t.currentStateChannel
+		if len(t.currentStateChannel) > 0 {
+			stateText, ok5 := <-t.currentStateChannel
 			if ok5 {
-				t.stateLabelWidget.SetText("Zustand: "+stateText)
+				t.stateLabelWidget.SetText("Zustand: " + stateText)
 			}
 		}
 
-		if len(t.currentOCRChannel)>0 {
-			ocrText,ok6 := <- t.currentOCRChannel
+		if len(t.currentOCRChannel) > 0 {
+			ocrText, ok6 := <-t.currentOCRChannel
 			if ok6 {
-				t.ocrLabelWidget.SetText("OCR: "+ocrText)
+				t.ocrLabelWidget.SetText("OCR: " + ocrText)
 			}
 		}
 
-		if len(t.listItemChannel)>0 {
-			histItem,ok7 := <- t.listItemChannel
+		if len(t.listItemChannel) > 0 {
+			histItem, ok7 := <-t.listItemChannel
 			if ok7 {
 
-				if histItem.State=="escaped" {
+				if histItem.State == "escaped" {
 					t.PlayAlert1()
 				}
-				found:=false
-				for i:=0;i<len(t.historyData);i++ {
+				found := false
+				for i := 0; i < len(t.historyData); i++ {
 					if t.historyData[i].Barcode == histItem.Barcode {
-						found=true
+						found = true
 						t.historyData[i] = histItem
 						break
 					}
 				}
 				if !found {
-					if len(t.historyData)>0 {
-						if (t.historyData[len(t.historyData)-1].State != "sendDone") {
+					if len(t.historyData) > 0 {
+						if t.historyData[len(t.historyData)-1].State != "sendDone" {
 							t.PlayAlert1()
 						}
 					}
-					
+
 					t.historyData = append(t.historyData, histItem)
 				}
 
-				if len(t.historyData)>6 {
+				if len(t.historyData) > 6 {
 					t.historyData = t.historyData[1:]
 				}
-
-
 
 				t.list.Refresh()
 				// t.ocrLabelWidget.SetText("OCR: "+histItem)
@@ -289,7 +283,6 @@ func (t *MainScreenClass) RedrawImage() {
 	}
 	log.Println("RedrawImage exited")
 }
-
 
 func (t *MainScreenClass) SetFullName(name string) {
 	t.fullNameWidget.SetText(name)
@@ -318,27 +311,24 @@ func (t *MainScreenClass) matToImage(mat gocv.Mat) image.Image {
 	return img
 }
 
-
 func (t *MainScreenClass) makeMain() fyne.CanvasObject {
- 
-	t.displayImage  =  canvas.NewImageFromImage(t.matToImage(gocv.NewMatWithSize(640, 480, gocv.MatTypeCV8UC3)))
-	//canvas.NewImageFromResource(assets.Image())	
-	
+
+	t.displayImage = canvas.NewImageFromImage(t.matToImage(gocv.NewMatWithSize(640, 480, gocv.MatTypeCV8UC3)))
+	//canvas.NewImageFromResource(assets.Image())
+
 	t.displayImage.FillMode = canvas.ImageFillContain
 	if !t.showImage {
 		t.displayImage.Hide()
 	}
 
-
 	return container.NewBorder(
-		nil, 
-		nil, 
-		nil, 
-		nil,  
+		nil,
+		nil,
+		nil,
+		nil,
 		t.displayImage,
 	)
 }
-
 
 func (t *MainScreenClass) makeTopBar() fyne.CanvasObject {
 	t.fullNameWidget = widget.NewLabel("Fullname")
@@ -350,26 +340,26 @@ func (t *MainScreenClass) makeTopBar() fyne.CanvasObject {
 	t.stateLabelWidget = widget.NewLabel("Zustand: UNBEKANNT")
 
 	return container.New(
-		layout.NewHBoxLayout(), 
-		
+		layout.NewHBoxLayout(),
+
 		t.boxLabelWidget,
 		t.stackLabelWidget,
 		t.ballotLabelWidget,
 		t.ocrLabelWidget,
 		t.stateLabelWidget,
-		layout.NewSpacer(), 
+		layout.NewSpacer(),
 
 		t.fullNameWidget,
 
 		widget.NewButtonWithIcon("", theme.SettingsIcon(), func() {
 			if t.settingsContainer.Visible() {
 				t.settingsContainer.Hide()
-			}else{
+			} else {
 				t.settingsContainer.Show()
 			}
 			t.main.Refresh()
 			t.displayImage.Refresh()
-		 }),
+		}),
 
 		widget.NewButtonWithIcon("Logout", theme.LogoutIcon(), func() {
 			if t.onLogout != nil {
@@ -378,21 +368,16 @@ func (t *MainScreenClass) makeTopBar() fyne.CanvasObject {
 		}),
 
 		/*
-		t.makeToolbarTab(),
+			t.makeToolbarTab(),
 		*/
-		
+
 	)
 
-	
-	
 }
-
-
 
 func (this *MainScreenClass) SetGlobals(globals *globals.GlobalValuesClass) {
 	this.globals = globals
 }
-
 
 /*
 func (t *MainScreenClass) func make(_ fyne.Window) fyne.CanvasObject {
@@ -434,9 +419,9 @@ func (t *MainScreenClass) func make(_ fyne.Window) fyne.CanvasObject {
 
 	return container.NewHSplit(list, container.NewCenter(hbox))
 }
-	*/
+*/
 
-func (t *MainScreenClass) makeLeftContainer()  fyne.CanvasObject {
+func (t *MainScreenClass) makeLeftContainer() fyne.CanvasObject {
 	t.informButton = widget.NewButton("Inform", func() {
 		if t.GetPlayState() {
 			t.escapedImage <- true
@@ -444,14 +429,13 @@ func (t *MainScreenClass) makeLeftContainer()  fyne.CanvasObject {
 	})
 	t.informButton.Importance = widget.DangerImportance
 
-
 	t.list = widget.NewList(
 		func() int {
 			return len(t.historyData)
 		},
 		func() fyne.CanvasObject {
 			return container.NewHBox(
-				widget.NewIcon(theme.DocumentIcon()), 
+				widget.NewIcon(theme.DocumentIcon()),
 				widget.NewRichTextFromMarkdown("**PAGINATION**\n\nStackCode"),
 			)
 		},
@@ -461,14 +445,14 @@ func (t *MainScreenClass) makeLeftContainer()  fyne.CanvasObject {
 				item.(*fyne.Container).Objects[0].(*widget.Icon).SetResource(theme.NewErrorThemedResource(theme.ErrorIcon()))
 			}
 			if t.historyData[id].State == "isCorrect" {
-				
-				item.(*fyne.Container).Objects[0].(*widget.Icon).SetResource(NewSuccessThemedResource(theme.DocumentIcon(),color.RGBA{0,55,255,255}))
+
+				item.(*fyne.Container).Objects[0].(*widget.Icon).SetResource(NewSuccessThemedResource(theme.DocumentIcon(), color.RGBA{0, 55, 255, 255}))
 			}
 			if t.historyData[id].State == "sendDone" {
-				item.(*fyne.Container).Objects[0].(*widget.Icon).SetResource(NewSuccessThemedResource(theme.ConfirmIcon(),color.RGBA{0,255,0,255}))
+				item.(*fyne.Container).Objects[0].(*widget.Icon).SetResource(NewSuccessThemedResource(theme.ConfirmIcon(), color.RGBA{0, 255, 0, 255}))
 			}
 			item.(*fyne.Container).Objects[0].(*widget.Icon).Refresh()
-			md:=fmt.Sprintf("**%s**\n\n%s",t.historyData[id].Barcode,t.historyData[id].StackBarcode)
+			md := fmt.Sprintf("**%s**\n\n%s", t.historyData[id].Barcode, t.historyData[id].StackBarcode)
 			item.(*fyne.Container).Objects[1].(*widget.RichText).ParseMarkdown(md)
 			//item.(*fyne.Container).Objects[1].(*widget.Label).SetText(t.historyData[id].Barcode)
 			//item.(*fyne.Container).Objects[1].(*fyne.Container).Objects[0].(*widget.Label).SetText(t.historyData[id].Barcode)
@@ -476,12 +460,12 @@ func (t *MainScreenClass) makeLeftContainer()  fyne.CanvasObject {
 		},
 	)
 
-	c:=container.NewBorder(
-		nil, //top
+	c := container.NewBorder(
+		nil,            //top
 		t.informButton, // bottom
-		nil, // left
-		nil,  // right
-		t.list, // center
+		nil,            // left
+		nil,            // right
+		t.list,         // center
 	)
 
 	return c
@@ -491,43 +475,32 @@ func (t *MainScreenClass) makeOuterContainer(onStartStopCamera func()) fyne.Canv
 	t.button = widget.NewButton("Start/Stop", onStartStopCamera)
 	t.button.SetText("Start")
 
-
-
-
-
 	t.settingsScreenClass = NewSettingsScreenClass()
-	t.settingsScreenClass.SetGlobals( t.globals )
+	t.settingsScreenClass.SetGlobals(t.globals)
 	t.settingsContainer = t.settingsScreenClass.CreateContainer()
-	
+
 	t.settingsContainer.Hide()
 	t.main = t.makeMain()
 
-
-	
-
-	
-	c:=container.NewBorder(
-		t.makeTopBar( ), 
-		t.button, 
-		t.makeLeftContainer(), 
-		t.settingsContainer,  
+	c := container.NewBorder(
+		t.makeTopBar(),
+		t.button,
+		t.makeLeftContainer(),
+		t.settingsContainer,
 		t.main,
 	)
-
-	
 
 	return c
 }
 
-
-func (t *MainScreenClass) OnTypedKey(k *fyne.KeyEvent,onStartStopCamera func()){
+func (t *MainScreenClass) OnTypedKey(k *fyne.KeyEvent, onStartStopCamera func()) {
 	if k.Name == "Space" {
 		if t.GetPlayState() {
 			//t.SetPlayState(false);
-			onStartStopCamera(	);
-		}else{
+			onStartStopCamera()
+		} else {
 			//t.SetPlayState(true);
-			onStartStopCamera(	);
+			onStartStopCamera()
 		}
 		log.Println(">>>>")
 	}
@@ -539,7 +512,6 @@ func (t *MainScreenClass) OnTypedKey(k *fyne.KeyEvent,onStartStopCamera func()){
 	}
 
 }
-
 
 func (t *MainScreenClass) CreateContainer(onStartStopCamera func()) *fyne.Container {
 	container := container.New(
@@ -554,15 +526,12 @@ func NewMainScreenClass() *MainScreenClass {
 	o := &MainScreenClass{
 		playState: false,
 		showImage: true,
-		onLogout: nil,
-
+		onLogout:  nil,
 	}
 	/*
-	o.initializeSounds()
-	o.PlayAlert1()
+		o.initializeSounds()
+		o.PlayAlert1()
 	*/
-
-	
 
 	// o.SetPlayState( false )
 	return o
