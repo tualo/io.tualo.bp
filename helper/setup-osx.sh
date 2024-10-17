@@ -3,6 +3,8 @@ xcode-select --install
 (echo; echo 'eval "$(/opt/homebrew/bin/brew shellenv)"') >> ~/.zprofile
     eval "$(/opt/homebrew/bin/brew shellenv)"
 
+brew update
+brew upgrade
 brew install tesseract
 brew install tesseract-lang
 brew install leptonica

@@ -5,4 +5,4 @@ Website = "https://tualo.de"
   Name = "Scanner"
   ID = "io.tualo.bp"
   Version = "1.0.0"
-  Build = 27
+  Build = 29

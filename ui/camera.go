@@ -272,7 +272,7 @@ func (t *MainScreenClass) RedrawImage() {
 				if !found {
 
 					if len(t.historyData) > 0 {
-						if t.historyData[len(t.historyData)-1].State != "sendDone" {
+						if t.historyData[len(t.historyData)-1].State != "sendDone" && t.historyData[len(t.historyData)-1].State != "escaped" {
 							t.PlayAlert1()
 						}
 					}
@@ -436,7 +436,7 @@ func (t *MainScreenClass) makeLeftContainer() fyne.CanvasObject {
 			t.escapedImage <- true
 		}
 	})
-	t.informButton.Importance = widget.DangerImportance
+	t.informButton.Importance = widget.WarningImportance
 
 	t.list = widget.NewList(
 		func() int {

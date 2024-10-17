@@ -12,7 +12,6 @@ import (
 	globals "io.tualo.bp/globals"
 	grab "io.tualo.bp/grab"
 	ui "io.tualo.bp/ui"
-	theme "io.tualo.bp/ui/theme"
 )
 
 var topWindow fyne.Window
@@ -47,7 +46,7 @@ func main() {
 	a := app.NewWithID(appID)
 	w := a.NewWindow("tualo - ballot scanner")
 	topWindow = w
-	fyne.CurrentApp().Settings().SetTheme(theme.DefaultTheme())
+	//	fyne.CurrentApp().Settings().SetTheme(theme.DefaultTheme())
 
 	loginScreenClass = ui.NewLoginScreenClass()
 	loginScreenClass.SetConfig(configData)
