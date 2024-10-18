@@ -9,7 +9,7 @@ import (
 func (this *GrabcameraClass) setState(name string, oldState structs.ImageProcessorState) structs.ImageProcessorState {
 	state := structs.ImageProcessorState{}
 	if false {
-		log.Println("setState", name, oldState.Name)
+		log.Println("setState", name, " old", oldState.Name)
 	}
 
 	if oldState.Name == "sendDone" && name != "ballotPaperCode" && name != "noBarcodeFound" && name != "escaped" {

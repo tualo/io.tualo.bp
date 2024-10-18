@@ -73,9 +73,10 @@ func (this *GrabcameraClass) processBarcodes(paper gocv.Mat) {
 					this.debugMarkList = []structs.CheckMarkList{}
 					this.currentBallotPaperId = 0
 					this.sendNeeded = true
-					this.currentState = this.setState("ballotPaperCode", this.currentState)
 
+					this.currentState = this.setState("ballotPaperCode", this.currentState)
 					this.setHistoryItem(code.Data, this.strCurrentBoxBarcode, this.strCurrentStackBarcode, this.currentState)
+
 					this.pipeDetectedCodes()
 
 				}
@@ -86,7 +87,7 @@ func (this *GrabcameraClass) processBarcodes(paper gocv.Mat) {
 				}
 
 				if this.doFindCircles {
-					log.Println("doFindCircles")
+					// log.Println("doFindCircles")
 					this.processMarks(paper)
 				} else {
 					// Suchen der Kreise ist nicht mehr notwendig

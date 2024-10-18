@@ -267,7 +267,7 @@ func NewGrabcameraClass() *GrabcameraClass {
 		ballotBarcode:       make(chan string, 1),
 		escapedImage:        make(chan bool, 1),
 
-		listItemChannel: make(chan structs.HistoryListItem, 1),
+		listItemChannel: make(chan structs.HistoryListItem, 10),
 
 		detectedCodesChannel: make(chan structs.DetectedCodes, 100),
 		sendImageQueue:       make(chan structs.SendImageQueueItem, 30),

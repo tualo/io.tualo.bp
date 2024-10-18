@@ -80,7 +80,7 @@ func (this *GrabcameraClass) processMarks(paper gocv.Mat) {
 				this.debugMarkList[i].Checked = this.debugMarkList[i].AVG > this.globals.SumMarksAVG
 			}
 
-			if res.IsCorrect {
+			if res.IsCorrect && this.currentState.Name != "escaped" {
 				this.currentState = this.setState("isCorrect", this.currentState)
 				this.setHistoryItem(this.lastBarcode, this.strCurrentBoxBarcode, this.strCurrentStackBarcode, this.currentState)
 				for i := 0; i < len(res.Marks); i++ {
@@ -105,7 +105,7 @@ func (this *GrabcameraClass) processMarks(paper gocv.Mat) {
 					this.checkMarkList[i].Checked = this.checkMarkList[i].AVG > this.globals.SumMarksAVG
 				}
 
-				log.Println("IsCorrect COUNTER: ", this.checkMarkList[0].Count, this.sendNeeded)
+				// log.Println("IsCorrect COUNTER: ", this.checkMarkList[0].Count, this.sendNeeded)
 
 				if len(this.checkMarkList) > 0 && this.checkMarkList[0].Count > 2 {
 					outList := []string{}
