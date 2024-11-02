@@ -270,7 +270,7 @@ func NewGrabcameraClass() *GrabcameraClass {
 		listItemChannel: make(chan structs.HistoryListItem, 10),
 
 		detectedCodesChannel: make(chan structs.DetectedCodes, 100),
-		sendImageQueue:       make(chan structs.SendImageQueueItem, 30),
+		sendImageQueue:       make(chan structs.SendImageQueueItem, 10),
 
 		loadMuster: false,
 

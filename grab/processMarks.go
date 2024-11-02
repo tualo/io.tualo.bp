@@ -7,6 +7,8 @@ import (
 	"encoding/json"
 	"image"
 	"log"
+	"math/rand/v2"
+	"strconv"
 	"strings"
 
 	//api "io.tualo.bp/api"
@@ -130,14 +132,37 @@ func (this *GrabcameraClass) processMarks(paper gocv.Mat) {
 						image_bytes.Close()
 
 						if this.sendNeeded {
-							status := this.sendImageItem(this.strCurrentBoxBarcode, this.strCurrentStackBarcode, res.Barcode, this.lastTesseractResult.PageRois[listOfRoiIndexes[0]].Types[foundIndex].Id, b.String(), "data:image/jpeg;base64,"+image_base64)
-							if status {
-								this.sendNeeded = false
-								this.currentState = this.setState("sendDone", this.currentState)
-								this.setHistoryItem(this.lastBarcode, this.strCurrentBoxBarcode, this.strCurrentStackBarcode, this.currentState)
+							fakeSubmit := false
+							if fakeSubmit {
+								bc, _ := strconv.Atoi(res.Barcode)
+								max_count := 1000
+								for i := 0; i < max_count; i++ {
+									bc += rand.IntN(max_count * 10)
+									bcs := strconv.FormatInt(int64(bc), 10)
+
+									this.lastBarcode = bcs
+									status := this.sendImageItem(this.strCurrentBoxBarcode, this.strCurrentStackBarcode, bcs, this.lastTesseractResult.PageRois[listOfRoiIndexes[0]].Types[foundIndex].Id, b.String(), "data:image/jpeg;base64,"+image_base64)
+									if status {
+										this.sendNeeded = false
+										this.currentState = this.setState("sendDone", this.currentState)
+										this.setHistoryItem(this.lastBarcode, this.strCurrentBoxBarcode, this.strCurrentStackBarcode, this.currentState)
+									} else {
+										this.currentState = this.setState("sendError", this.currentState)
+										this.setHistoryItem(this.lastBarcode, this.strCurrentBoxBarcode, this.strCurrentStackBarcode, this.currentState)
+									}
+
+								}
+
 							} else {
-								this.currentState = this.setState("sendError", this.currentState)
-								this.setHistoryItem(this.lastBarcode, this.strCurrentBoxBarcode, this.strCurrentStackBarcode, this.currentState)
+								status := this.sendImageItem(this.strCurrentBoxBarcode, this.strCurrentStackBarcode, res.Barcode, this.lastTesseractResult.PageRois[listOfRoiIndexes[0]].Types[foundIndex].Id, b.String(), "data:image/jpeg;base64,"+image_base64)
+								if status {
+									this.sendNeeded = false
+									this.currentState = this.setState("sendDone", this.currentState)
+									this.setHistoryItem(this.lastBarcode, this.strCurrentBoxBarcode, this.strCurrentStackBarcode, this.currentState)
+								} else {
+									this.currentState = this.setState("sendError", this.currentState)
+									this.setHistoryItem(this.lastBarcode, this.strCurrentBoxBarcode, this.strCurrentStackBarcode, this.currentState)
+								}
 							}
 						}
 

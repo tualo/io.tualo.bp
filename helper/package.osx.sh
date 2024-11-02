@@ -7,6 +7,8 @@ working_dir="./Scanner.app/Contents/MacOS/"
 executable="io.tualo.bp"
 
 fyne package -os darwin --release
+cp helper/Info.plist Scanner.app/Contents/Info.plist
+go build 
 
 
 mkdir -p "Scanner.app/Contents/MacOS/assets"

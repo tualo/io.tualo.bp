@@ -6,7 +6,7 @@ import (
 )
 
 func (this *GrabcameraClass) sendImageItem(boxbarcode string, stackbarcode string, barcode string, id int, marks string, image string) bool {
-	usePiped := true
+	usePiped := false
 
 	if usePiped {
 		item := structs.SendImageQueueItem{

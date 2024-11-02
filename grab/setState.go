@@ -122,7 +122,7 @@ func (this *GrabcameraClass) setState(name string, oldState structs.ImageProcess
 	if name == "isCorrect" {
 		state.Red = 10
 		state.Green = 155
-		state.Blue = 10
+		state.Blue = 130
 	}
 
 	return state
