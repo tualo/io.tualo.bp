@@ -1,11 +1,13 @@
 module io.tualo.bp
 
-go 1.22.0
+go 1.23.1
 
 require (
 	fyne.io/fyne/v2 v2.5.1
 	github.com/agnivade/levenshtein v1.1.1
 	github.com/bieber/barcode v0.0.0-20230820185446-2e682506f5b4
+	github.com/galeone/tensorflow/tensorflow/go v0.0.0-20221023090153-6b7fa0680c3e
+	github.com/galeone/tfgo v0.0.0-20230715013254-16113111dc99
 	github.com/gopxl/beep v1.4.1
 	github.com/otiai10/gosseract/v2 v2.4.1
 	github.com/srwiley/oksvg v0.0.0-20221011165216-be6e8873101c
@@ -45,5 +47,6 @@ require (
 	golang.org/x/net v0.25.0 // indirect
 	golang.org/x/sys v0.20.0 // indirect
 	golang.org/x/text v0.16.0 // indirect
+	google.golang.org/protobuf v1.35.1 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
