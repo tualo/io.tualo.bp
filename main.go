@@ -73,6 +73,11 @@ func main() {
 				return
 			}
 			log.Println("GetConfig", conf)
+			// fehler ausgeben, wenn keine configs zurückgegeben wurden
+			if len(conf) == 0 {
+				log.Println("GetConfig ERROR: no configs returned")
+				return
+			}
 			log.Println("GetConfig ROIS", conf[0].Rois)
 
 			grabber.SetDocumentConfigurations(conf)

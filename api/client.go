@@ -8,7 +8,9 @@ import (
 	"net"
 	"net/http"
 	"net/http/cookiejar"
+	"net/url"
 	"strings"
+
 	"time"
 
 	structs "io.tualo.bp/structs"
@@ -86,9 +88,10 @@ func Post(url string, data string) (string, error) {
 	return string(body), nil
 }
 
-func Login(url string, username string, password string) (LoginResponse, error) {
+func Login(str_url string, username string, password string) (LoginResponse, error) {
 	var loginResponse LoginResponse
-	sb, err := Post(url, "forcelogin=1&username="+username+"&password="+password+"")
+	url_encoded_password := url.QueryEscape(password)
+	sb, err := Post(str_url, "forcelogin=1&username="+username+"&password="+url_encoded_password+"")
 	json.Unmarshal([]byte(sb), &loginResponse)
 	return loginResponse, err
 }
