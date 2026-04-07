@@ -7,13 +7,15 @@ import (
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/layout"
 	"fyne.io/fyne/v2/widget"
-	globals "io.tualo.bp/globals"
-	grabcamera "io.tualo.bp/grab"
+	"tualo.de/deep-test/camera"
+	"tualo.de/deep-test/globals"
 )
 
 type SettingsScreenClass struct {
-	grabber *grabcamera.GrabcameraClass
-	globals *globals.GlobalValuesClass
+	/*
+		grabber *grabcamera.GrabcameraClass
+		globals *globals.GlobalValuesClass
+	*/
 
 	cameraSelectWidget                  *widget.Select
 	cameraCaptureFrameFactorWidget      *widget.Slider
@@ -49,13 +51,6 @@ type SettingsScreenClass struct {
 	outputWidget *widget.Select
 }
 
-func (this *SettingsScreenClass) SetGrabber(grabber *grabcamera.GrabcameraClass) {
-	this.grabber = grabber
-}
-func (this *SettingsScreenClass) SetGlobals(globals *globals.GlobalValuesClass) {
-	this.globals = globals
-}
-
 func (this *SettingsScreenClass) SetFCChannels(value bool) {
 	val := 0
 	if this.checkR.Checked {
@@ -67,19 +62,19 @@ func (this *SettingsScreenClass) SetFCChannels(value bool) {
 	if this.checkB.Checked {
 		val |= 1 << 0
 	}
-	this.globals.FindContourChannelMask = val
+	globals.Globals().FindContourChannelMask = val
 }
 
 func (this *SettingsScreenClass) makeSettingsForm() fyne.CanvasObject {
 
-	cameraList := this.grabber.GetCameraList()
+	cameraList := camera.GetCameraList()
 	// fmt.Println("maxcameranum",len(cameraList))
 	//"Camera 1", "Camera 2", "Camera 3", "Camera 4"
 	this.cameraSelectWidget = widget.NewSelect([]string{}, func(value string) {
 		// fmt.Println("cameraSelectWidget",value)
 		for i := 0; i < len(cameraList); i++ {
 			if value == fmt.Sprintf("Camera %d (%dx%d)", (i+1), cameraList[i].Width, cameraList[i].Height) {
-				this.globals.IntCamera = i
+				globals.Globals().IntCamera = i
 			}
 		}
 	})
@@ -87,140 +82,140 @@ func (this *SettingsScreenClass) makeSettingsForm() fyne.CanvasObject {
 		this.cameraSelectWidget.Options = append(this.cameraSelectWidget.Options, fmt.Sprintf("Camera %d (%dx%d)", (i+1), cameraList[i].Width, cameraList[i].Height))
 	}
 	this.cameraSelectWidget.PlaceHolder = "Bitte wählen Sie eine Kamera aus"
-	// fmt.Println("cameraSelectWidget",this.cameraSelectWidget.Options,cameraList,this.globals.IntCamera)
-	if this.globals.IntCamera > len(cameraList) {
-		this.globals.IntCamera = 0
+	// fmt.Println("cameraSelectWidget",this.cameraSelectWidget.Options,cameraList,globals.Globals().IntCamera)
+	if globals.Globals().IntCamera > len(cameraList) {
+		globals.Globals().IntCamera = 0
 	}
 	if len(cameraList) > 0 {
-		if this.globals.IntCamera < len(cameraList) {
-			this.cameraSelectWidget.SetSelected(this.cameraSelectWidget.Options[this.globals.IntCamera])
+		if globals.Globals().IntCamera < len(cameraList) {
+			this.cameraSelectWidget.SetSelected(this.cameraSelectWidget.Options[globals.Globals().IntCamera])
 		} else {
 			this.cameraSelectWidget.SetSelected(this.cameraSelectWidget.Options[0])
 		}
 	}
 
-	this.cameraCaptureFrameFactorWidgetLabel = widget.NewLabel(fmt.Sprintf("%.2f", this.globals.CaptureFrameFactor))
+	this.cameraCaptureFrameFactorWidgetLabel = widget.NewLabel(fmt.Sprintf("%.2f", globals.Globals().CaptureFrameFactor))
 	this.cameraCaptureFrameFactorWidget = widget.NewSlider(1, 3)
 	// 1 = 1.0, 2 = 0.75, 3 = 0.5
-	if this.globals.CaptureFrameFactor == 1 {
+	if globals.Globals().CaptureFrameFactor == 1 {
 		this.cameraCaptureFrameFactorWidget.Value = 1
-	} else if this.globals.CaptureFrameFactor == 0.75 {
+	} else if globals.Globals().CaptureFrameFactor == 0.75 {
 		this.cameraCaptureFrameFactorWidget.Value = 2
-	} else if this.globals.CaptureFrameFactor == 0.5 {
+	} else if globals.Globals().CaptureFrameFactor == 0.5 {
 		this.cameraCaptureFrameFactorWidget.Value = 3
 	}
-	// this.cameraCaptureFrameFactorWidget.Value = 1 / this.globals.CaptureFrameFactor
+	// this.cameraCaptureFrameFactorWidget.Value = 1 / globals.Globals().CaptureFrameFactor
 	this.cameraCaptureFrameFactorWidget.OnChangeEnded = func(value float64) {
 		fmt.Println("cameraCaptureFrameFactorWidget", value)
 		if value == 1 {
-			this.globals.CaptureFrameFactor = 1
+			globals.Globals().CaptureFrameFactor = 1
 		} else if value == 2 {
-			this.globals.CaptureFrameFactor = 0.75
+			globals.Globals().CaptureFrameFactor = 0.75
 		} else if value == 3 {
-			this.globals.CaptureFrameFactor = 0.5
+			globals.Globals().CaptureFrameFactor = 0.5
 		}
 
-		this.cameraCaptureFrameFactorWidgetLabel.SetText(fmt.Sprintf("%.2f", this.globals.CaptureFrameFactor))
+		this.cameraCaptureFrameFactorWidgetLabel.SetText(fmt.Sprintf("%.2f", globals.Globals().CaptureFrameFactor))
 	}
 
-	this.cameraCaptureFPSWidgetLabel = widget.NewLabel(fmt.Sprintf("%.0f", this.globals.CaptureFPS))
+	this.cameraCaptureFPSWidgetLabel = widget.NewLabel(fmt.Sprintf("%.0f", globals.Globals().CaptureFPS))
 	this.cameraCaptureFPSWidget = widget.NewSlider(1, 15)
-	this.cameraCaptureFPSWidget.Value = this.globals.CaptureFPS
+	this.cameraCaptureFPSWidget.Value = globals.Globals().CaptureFPS
 	this.cameraCaptureFPSWidget.OnChangeEnded = func(value float64) {
-		this.globals.CaptureFPS = value
-		this.cameraCaptureFPSWidgetLabel.SetText(fmt.Sprintf("%.0f", this.globals.CaptureFPS))
+		globals.Globals().CaptureFPS = value
+		this.cameraCaptureFPSWidgetLabel.SetText(fmt.Sprintf("%.0f", globals.Globals().CaptureFPS))
 	}
 
 	// ----------------- PaperContour -----------------
 
-	this.paperContourFactorWidgetLabel = widget.NewLabel(fmt.Sprintf("%.2f", this.globals.PaperFindContourFactor))
+	this.paperContourFactorWidgetLabel = widget.NewLabel(fmt.Sprintf("%.2f", globals.Globals().PaperFindContourFactor))
 	this.paperContourFactorWidget = widget.NewSlider(1, 10)
-	this.paperContourFactorWidget.Value = 1 / this.globals.PaperFindContourFactor
+	this.paperContourFactorWidget.Value = 1 / globals.Globals().PaperFindContourFactor
 	this.paperContourFactorWidget.OnChangeEnded = func(value float64) {
-		this.globals.PaperFindContourFactor = 1 / value
-		this.paperContourFactorWidgetLabel.SetText(fmt.Sprintf("%.2f", this.globals.PaperFindContourFactor))
+		globals.Globals().PaperFindContourFactor = 1 / value
+		this.paperContourFactorWidgetLabel.SetText(fmt.Sprintf("%.2f", globals.Globals().PaperFindContourFactor))
 	}
 
 	// ----------------- Circle Detection -----------------
 
-	this.thresholdHoughCirclesWidgetLabel = widget.NewLabel(fmt.Sprintf("%.0f", this.globals.ThresholdHoughCircles))
-	this.meanFindCirclesWidgetLabel = widget.NewLabel(fmt.Sprintf("%.0f", this.globals.MeanFindCircles))
-	this.dpHoughCirclesWidgetLabel = widget.NewLabel(fmt.Sprintf("%.0f", this.globals.DpHoughCircles))
-	this.gaussianBlurFindCirclesWidgetLabel = widget.NewLabel(fmt.Sprintf("%.2fmm", this.globals.GaussianBlurFindCircles))
-	this.adaptiveThresholdBlockSizeWidgetLabel = widget.NewLabel(fmt.Sprintf("%.2fmm", this.globals.AdaptiveThresholdBlockSize))
-	this.adaptiveThresholdSubtractMeanWidgetLabel = widget.NewLabel(fmt.Sprintf("%.1f", this.globals.AdaptiveThresholdSubtractMean))
+	this.thresholdHoughCirclesWidgetLabel = widget.NewLabel(fmt.Sprintf("%.0f", globals.Globals().ThresholdHoughCircles))
+	this.meanFindCirclesWidgetLabel = widget.NewLabel(fmt.Sprintf("%.0f", globals.Globals().MeanFindCircles))
+	this.dpHoughCirclesWidgetLabel = widget.NewLabel(fmt.Sprintf("%.0f", globals.Globals().DpHoughCircles))
+	this.gaussianBlurFindCirclesWidgetLabel = widget.NewLabel(fmt.Sprintf("%.2fmm", globals.Globals().GaussianBlurFindCircles))
+	this.adaptiveThresholdBlockSizeWidgetLabel = widget.NewLabel(fmt.Sprintf("%.2fmm", globals.Globals().AdaptiveThresholdBlockSize))
+	this.adaptiveThresholdSubtractMeanWidgetLabel = widget.NewLabel(fmt.Sprintf("%.1f", globals.Globals().AdaptiveThresholdSubtractMean))
 
 	this.thresholdHoughCirclesWidget = widget.NewSlider(0, 255)
-	this.thresholdHoughCirclesWidget.Value = this.globals.ThresholdHoughCircles
+	this.thresholdHoughCirclesWidget.Value = globals.Globals().ThresholdHoughCircles
 	this.thresholdHoughCirclesWidget.OnChangeEnded = func(value float64) {
-		this.globals.ThresholdHoughCircles = value
+		globals.Globals().ThresholdHoughCircles = value
 		this.thresholdHoughCirclesWidgetLabel.SetText(fmt.Sprintf("%.0f", value))
 	}
 
 	this.meanFindCirclesWidget = widget.NewSlider(1, 254)
-	this.meanFindCirclesWidget.Value = this.globals.MeanFindCircles
+	this.meanFindCirclesWidget.Value = globals.Globals().MeanFindCircles
 	this.meanFindCirclesWidget.OnChangeEnded = func(value float64) {
-		this.globals.MeanFindCircles = value
+		globals.Globals().MeanFindCircles = value
 		this.meanFindCirclesWidgetLabel.SetText(fmt.Sprintf("%.0f", value))
 	}
 
 	this.dpHoughCirclesWidget = widget.NewSlider(0, 3)
-	this.dpHoughCirclesWidget.Value = this.globals.DpHoughCircles
+	this.dpHoughCirclesWidget.Value = globals.Globals().DpHoughCircles
 	this.dpHoughCirclesWidget.OnChangeEnded = func(value float64) {
-		this.globals.DpHoughCircles = value
+		globals.Globals().DpHoughCircles = value
 		this.dpHoughCirclesWidgetLabel.SetText(fmt.Sprintf("%.0f", value))
 	}
 
 	this.gaussianBlurFindCirclesWidget = widget.NewSlider(1, 50)
-	this.gaussianBlurFindCirclesWidget.Value = float64(this.globals.GaussianBlurFindCircles) * 10
+	this.gaussianBlurFindCirclesWidget.Value = float64(globals.Globals().GaussianBlurFindCircles) * 10
 	this.gaussianBlurFindCirclesWidget.OnChangeEnded = func(value float64) {
 
-		this.globals.GaussianBlurFindCircles = (value / 10)
-		this.gaussianBlurFindCirclesWidgetLabel.SetText(fmt.Sprintf("%.2fmm", this.globals.GaussianBlurFindCircles))
+		globals.Globals().GaussianBlurFindCircles = (value / 10)
+		this.gaussianBlurFindCirclesWidgetLabel.SetText(fmt.Sprintf("%.2fmm", globals.Globals().GaussianBlurFindCircles))
 
 	}
 
 	this.adaptiveThresholdBlockSizeWidget = widget.NewSlider(30, 90)
-	this.adaptiveThresholdBlockSizeWidget.Value = float64(this.globals.AdaptiveThresholdBlockSize) * 10
+	this.adaptiveThresholdBlockSizeWidget.Value = float64(globals.Globals().AdaptiveThresholdBlockSize) * 10
 	this.adaptiveThresholdBlockSizeWidget.OnChangeEnded = func(value float64) {
-		this.globals.AdaptiveThresholdBlockSize = value / 10
-		this.adaptiveThresholdBlockSizeWidgetLabel.SetText(fmt.Sprintf("%.2fmm", (this.globals.AdaptiveThresholdBlockSize)))
+		globals.Globals().AdaptiveThresholdBlockSize = value / 10
+		this.adaptiveThresholdBlockSizeWidgetLabel.SetText(fmt.Sprintf("%.2fmm", (globals.Globals().AdaptiveThresholdBlockSize)))
 
 	}
 
 	this.adaptiveThresholdSubtractMeanWidget = widget.NewSlider(-10, 10)
-	this.adaptiveThresholdSubtractMeanWidget.Value = float64(this.globals.AdaptiveThresholdSubtractMean)
+	this.adaptiveThresholdSubtractMeanWidget.Value = float64(globals.Globals().AdaptiveThresholdSubtractMean)
 	this.adaptiveThresholdSubtractMeanWidget.OnChangeEnded = func(value float64) {
-		this.globals.AdaptiveThresholdSubtractMean = float32(value)
+		globals.Globals().AdaptiveThresholdSubtractMean = float32(value)
 		this.adaptiveThresholdSubtractMeanWidgetLabel.SetText(fmt.Sprintf("%.1f", value))
 	}
 
 	this.checkR = widget.NewCheck("R", this.SetFCChannels)
-	this.checkR.Checked = (this.globals.FindContourChannelMask & 4) != 0
+	this.checkR.Checked = (globals.Globals().FindContourChannelMask & 4) != 0
 	this.checkG = widget.NewCheck("G", this.SetFCChannels)
-	this.checkG.Checked = (this.globals.FindContourChannelMask & 2) != 0
+	this.checkG.Checked = (globals.Globals().FindContourChannelMask & 2) != 0
 	this.checkB = widget.NewCheck("B", this.SetFCChannels)
-	this.checkB.Checked = (this.globals.FindContourChannelMask & 1) != 0
+	this.checkB.Checked = (globals.Globals().FindContourChannelMask & 1) != 0
 
-	this.paperFindContourNoiseBlurSizeWidgetLabel = widget.NewLabel(fmt.Sprintf("%.0fpx", float64(this.globals.PaperFindContourNoiseBlurSize)))
+	this.paperFindContourNoiseBlurSizeWidgetLabel = widget.NewLabel(fmt.Sprintf("%.0fpx", float64(globals.Globals().PaperFindContourNoiseBlurSize)))
 	this.paperFindContourNoiseBlurSizeWidget = widget.NewSlider(3, 79)
-	this.paperFindContourNoiseBlurSizeWidget.Value = float64(this.globals.PaperFindContourNoiseBlurSize)
+	this.paperFindContourNoiseBlurSizeWidget.Value = float64(globals.Globals().PaperFindContourNoiseBlurSize)
 	this.paperFindContourNoiseBlurSizeWidget.OnChangeEnded = func(value float64) {
-		this.globals.PaperFindContourNoiseBlurSize = int(value)
-		this.paperFindContourNoiseBlurSizeWidgetLabel.SetText(fmt.Sprintf("%.0fpx", float64(this.globals.PaperFindContourNoiseBlurSize)))
+		globals.Globals().PaperFindContourNoiseBlurSize = int(value)
+		this.paperFindContourNoiseBlurSizeWidgetLabel.SetText(fmt.Sprintf("%.0fpx", float64(globals.Globals().PaperFindContourNoiseBlurSize)))
 
 	}
 
-	this.erodeDillateSizeWidgetLabel = widget.NewLabel(fmt.Sprintf("%.0fpx", float64(this.globals.ErodeDillateSize)))
+	this.erodeDillateSizeWidgetLabel = widget.NewLabel(fmt.Sprintf("%.0fpx", float64(globals.Globals().ErodeDillateSize)))
 	this.erodeDillateSizeWidget = widget.NewSlider(3, 79)
-	this.erodeDillateSizeWidget.Value = float64(this.globals.ErodeDillateSize)
+	this.erodeDillateSizeWidget.Value = float64(globals.Globals().ErodeDillateSize)
 	this.erodeDillateSizeWidget.OnChangeEnded = func(value float64) {
-		this.globals.ErodeDillateSize = int(value)
-		this.erodeDillateSizeWidgetLabel.SetText(fmt.Sprintf("%.0fpx", float64(this.globals.ErodeDillateSize)))
+		globals.Globals().ErodeDillateSize = int(value)
+		this.erodeDillateSizeWidgetLabel.SetText(fmt.Sprintf("%.0fpx", float64(globals.Globals().ErodeDillateSize)))
 
 	}
 
-	//this.globals.ShowImage = 502
+	//globals.Globals().ShowImage = 502
 
 	outpuList := []struct {
 		Name  string
@@ -237,13 +232,13 @@ func (this *SettingsScreenClass) makeSettingsForm() fyne.CanvasObject {
 		// fmt.Println("cameraSelectWidget",value)
 		for i := 0; i < len(outpuList); i++ {
 			if value == outpuList[i].Name {
-				this.globals.ShowImage = outpuList[i].Index
+				globals.Globals().ShowImage = outpuList[i].Index
 			}
 		}
 	})
 	for i := 0; i < len(outpuList); i++ {
 		this.outputWidget.Options = append(this.outputWidget.Options, outpuList[i].Name)
-		if this.globals.ShowImage == outpuList[i].Index {
+		if globals.Globals().ShowImage == outpuList[i].Index {
 			this.outputWidget.SetSelected(this.outputWidget.Options[i])
 		}
 	}

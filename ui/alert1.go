@@ -5,6 +5,7 @@ package ui
 
 import "fyne.io/fyne/v2"
 
+
 var resourceSmsAlert1DanielsimonMp3 = &fyne.StaticResource{
 	StaticName: "sms-alert-1-daniel_simon.mp3",
 	StaticContent: []byte(

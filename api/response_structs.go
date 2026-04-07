@@ -1,42 +1,5 @@
 package api
 
-
-type LoginResponse struct {
-	Msg      string `json:"msg"`
-	Success  bool   `json:"success"`
-	Errors   []any  `json:"errors"`
-	Warnings []any  `json:"warnings"`
-	Fullname string `json:"fullname"`
-	Username string `json:"username"`
-	Client   string `json:"client"`
-	Clients  []struct {
-		Client string `json:"client"`
-	} `json:"clients"`
-	Dbaccess bool `json:"dbaccess"`
-}
-
-
-type PingResponse struct {
-	Msg      string `json:"msg"`
-	Success  bool   `json:"success"`
-	Errors   []any  `json:"errors"`
-	Warnings []any  `json:"warnings"`
-	Username string `json:"username"`
-	Clients  []struct {
-		Client string `json:"client"`
-	} `json:"clients"`
-	Client       string `json:"client"`
-	Fullname     string `json:"fullname"`
-	Gst          string `json:"gst"`
-	Bkr          string `json:"bkr"`
-	Gstavatar    string `json:"gstavatar"`
-	Bkravatar    string `json:"bkravatar"`
-	Avatar       string `json:"avatar"`
-	Clientavatar string `json:"clientavatar"`
-}
-
-
-
 type StimmzettelResponse struct {
 	Msg                 string `json:"msg"`
 	Success             bool   `json:"success"`
@@ -87,7 +50,6 @@ type StimmzettelResponse struct {
 	Total int `json:"total"`
 }
 
-
 type KandidatenResponse struct {
 	Msg                 string `json:"msg"`
 	Success             bool   `json:"success"`
@@ -95,10 +57,10 @@ type KandidatenResponse struct {
 	Warnings            []any  `json:"warnings"`
 	DsxRestAPIGetResult string `json:"dsx_rest_api_get_result"`
 	Data                []struct {
-		TableName                             string `json:"__table_name"`
-		ID                                    string `json:"__id"`
-		Barcode                               string `json:"barcode"`
-		Displayfield                          string `json:"__displayfield"`
+		TableName    string `json:"__table_name"`
+		ID           string `json:"__id"`
+		Barcode      string `json:"barcode"`
+		Displayfield string `json:"__displayfield"`
 	} `json:"data"`
 	Total int `json:"total"`
 }

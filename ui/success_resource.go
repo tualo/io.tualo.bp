@@ -2,18 +2,16 @@ package ui
 
 import (
 	"image/color"
+
 	"fyne.io/fyne/v2"
-	
-
-	svg "io.tualo.bp/svg"
+	"tualo.de/deep-test/svg"
 )
-
 
 // InvertedThemedResource is a resource wrapper that will return a version of the resource with the main color changed
 // for use over highlighted elements.
 type SuccessThemedResource struct {
 	source fyne.Resource
-	color color.RGBA
+	color  color.RGBA
 }
 
 // NewInvertedThemedResource creates a resource that adapts to the current theme for use over highlighted elements.

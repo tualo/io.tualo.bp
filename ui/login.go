@@ -2,16 +2,16 @@ package ui
 
 import (
 	"image/color"
-	"log"
 	"os"
+	"strings"
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/canvas"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/layout"
 	"fyne.io/fyne/v2/widget"
-	api "io.tualo.bp/api"
-	config "io.tualo.bp/config"
+	"tualo.de/deep-test/api"
+	"tualo.de/deep-test/config"
 )
 
 type LoginScreenClass struct {
@@ -20,8 +20,7 @@ type LoginScreenClass struct {
 	strLogin    string
 	strPassword string
 
-	onLogin    func(name string)
-	configData *config.ConfigurationClass
+	onLogin func(name string)
 
 	url      *widget.Entry
 	login    *widget.Entry
@@ -36,19 +35,15 @@ func (o *LoginScreenClass) doLogin() {
 	o.strUrl = o.url.Text
 	o.strLogin = o.login.Text
 	o.strPassword = o.password.Text
-	/*
-		if o.strUrl == "" {
-			o.strUrl = strSystemUrl
-		}
-		if o.strLogin == "" {
-			o.strLogin = strSystemLogin
-		}
-		if o.strPassword == "" {
-			o.strPassword = o.strSystemPassword
-		}
-	*/
-	loginResponse, err := api.Login(o.strUrl, o.strLogin, o.strPassword)
-	log.Println("loginResponse", loginResponse, err)
+
+	// teste ob die url mit einem slash endet, wenn nicht ergänze es
+	if !strings.HasSuffix(o.strUrl, "/") {
+		o.strUrl += "/"
+	}
+
+	api.Static().SetUrl(o.strUrl)
+	loginResponse, err := api.Static().Login(o.strLogin, o.strPassword)
+
 	if err != nil {
 		fyne.CurrentApp().SendNotification(&fyne.Notification{
 			Title:   "Login failed",
@@ -58,24 +53,20 @@ func (o *LoginScreenClass) doLogin() {
 	} else {
 		if loginResponse.Success {
 
-			o.configData.Set("credentials", "url", o.strUrl)
-			o.configData.Set("credentials", "login", o.strLogin)
-			o.configData.Set("credentials", "password", o.strPassword)
-			o.configData.Save()
+			api.Static().Switch("bwbriefwahl_muenchen")
+			api.Static().GetTitleRegionsConfig()
+			api.Static().RoiConfig()
+			api.Static().TitleRegions()
+			api.Static().CandidateBarcodes()
+			api.Static().BallotpaperSizes()
 
-			/*
-				fyne.CurrentApp().SendNotification(&fyne.Notification{
-					Title:   "Login successful",
-					Content: "Welcome " + loginResponse.Fullname,
-				})
-			*/
-			api.SetSystemURL(o.strUrl)
+			config.Configuration().Set("credentials", "url", o.strUrl)
+			config.Configuration().Set("credentials", "login", o.strLogin)
+			config.Configuration().Set("credentials", "password", o.strPassword)
+			config.Configuration().Save()
 
-			o.pingResponse, _ = api.Ping()
-
-			o.kandidatenResponse, _ = api.GetKandidaten()
-			// fmt.Println(o.kandidatenResponse)
-
+			o.pingResponse, _ = api.Static().Ping()
+			// o.kandidatenResponse, _ = api.GetKandidaten()
 			if o.onLogin != nil {
 				o.onLogin(loginResponse.Fullname)
 			}
@@ -96,16 +87,17 @@ func (o *LoginScreenClass) makeLoginFormTab() fyne.CanvasObject {
 
 	o.url = widget.NewEntry()
 	o.url.SetPlaceHolder("URL")
-	o.url.SetText(o.configData.Get("credentials", "url"))
+
+	o.url.SetText(config.Configuration().Get("credentials", "url"))
 
 	o.login = widget.NewEntry()
 	o.login.SetPlaceHolder("Benutzername")
-	o.login.SetText(o.configData.Get("credentials", "login"))
+	o.login.SetText(config.Configuration().Get("credentials", "login"))
 	// email.Validator = validation.NewRegexp(`\w{1,}@\w{1,}\.\w{1,4}`, "not a valid email")
 
 	o.password = widget.NewPasswordEntry()
 	o.password.SetPlaceHolder("Password")
-	o.password.SetText(o.configData.Get("credentials", "password"))
+	o.password.SetText(config.Configuration().Get("credentials", "password"))
 
 	form := &widget.Form{
 		SubmitText: "Anmelden",
@@ -126,10 +118,6 @@ func (o *LoginScreenClass) makeLoginFormTab() fyne.CanvasObject {
 
 func (o *LoginScreenClass) SetOnLogin(fn func(name string)) {
 	o.onLogin = fn
-}
-
-func (o *LoginScreenClass) SetConfig(cnf *config.ConfigurationClass) {
-	o.configData = cnf
 }
 
 func (o *LoginScreenClass) CreateContainer() *fyne.Container {

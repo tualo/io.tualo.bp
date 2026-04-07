@@ -2,119 +2,79 @@ package main
 
 import (
 	"log"
+	"runtime"
 
-	"fyne.io/fyne/v2"
-	"fyne.io/fyne/v2/app"
-	"fyne.io/fyne/v2/container"
-	"fyne.io/fyne/v2/layout"
-	api "io.tualo.bp/api"
-	config "io.tualo.bp/config"
-	globals "io.tualo.bp/globals"
-	grab "io.tualo.bp/grab"
-	ui "io.tualo.bp/ui"
+	"tualo.de/deep-test/api"
+	"tualo.de/deep-test/args"
+	"tualo.de/deep-test/camera"
+	"tualo.de/deep-test/config"
+	"tualo.de/deep-test/cv"
+	"tualo.de/deep-test/globals"
+	"tualo.de/deep-test/nn"
+	"tualo.de/deep-test/postcheck"
+	"tualo.de/deep-test/train"
+	"tualo.de/deep-test/ui"
+
+	"net/http"
+	_ "net/http/pprof"
 )
 
-var topWindow fyne.Window
-var loginContainer *fyne.Container
-var cameraContainer *fyne.Container
-var mainScreenClass *ui.MainScreenClass
-var loginScreenClass *ui.LoginScreenClass
-var settingsScreenClass *ui.SettingsScreenClass
-
-var configData *config.ConfigurationClass
-var g *globals.GlobalValuesClass
-
-var appID = "io.tualo.bp"
-
 func main() {
+	runtime.LockOSThread()
 
-	configData = config.NewConfigurationClass()
+	arguments := args.Parser()
+
+	api := api.Static()
+
+	if *arguments.URL != "" {
+		api.RoiConfig()
+		api.TitleRegions()
+		api.CandidateBarcodes()
+		api.BallotpaperSizes()
+		//		log.Println(api.RoiConfig())
+	}
+
+	if *arguments.EnableNNServiceURL != "" {
+		nn.Service().Setup(*arguments.EnableNNServiceURL, *arguments.EnableNNServiceSize, *arguments.EnableNNServiceSize)
+	}
+
+	if *arguments.Help {
+		arguments.Usage()
+	}
+
+	go cv.Monitor()
+	if *arguments.MemoryMonitoring {
+		go cv.Display()
+	}
+
+	if *arguments.Profiling {
+		go func() {
+			log.Println(http.ListenAndServe("localhost:6060", nil))
+		}()
+	}
+
+	if *arguments.TrainModel {
+		trainer := train.Traning{}
+		trainer.Run()
+	}
+
+	var appID = "io.tualo.bp"
+	configData := config.Configuration()
 	configData.SetAppID(appID)
 	configData.Load()
 
-	g = globals.NewGlobalValuesClass()
+	g := globals.Globals()
 	g.SetDefaults()
 	log.Println("globals", g)
 	g.ConfigData = configData
 	g.Load()
 
-	log.Println("globals", g)
-
-	grabber := grab.NewGrabcameraClass()
-	grabber.SetGlobalValues(g)
-
-	a := app.NewWithID(appID)
-	w := a.NewWindow("tualo - ballot scanner")
-	topWindow = w
-	//	fyne.CurrentApp().Settings().SetTheme(theme.DefaultTheme())
-
-	loginScreenClass = ui.NewLoginScreenClass()
-	loginScreenClass.SetConfig(configData)
-	loginScreenClass.SetOnLogin(func(name string) {
-		loginContainer.Hide()
-		cameraContainer.Show()
-		mainScreenClass.SetFullName(name)
-	})
-
-	loginContainer = loginScreenClass.CreateContainer()
-
-	mainScreenClass = ui.NewMainScreenClass()
-
-	mainScreenClass.SetGlobals(g)
-	mainScreenClass.TopWindow = topWindow
-
-	startStop := func() {
-
-		if !mainScreenClass.GetPlayState() {
-			conf, err := api.GetConfig()
-
-			if err != nil {
-				log.Println("GetConfig ERROR", err)
-				return
-			}
-			log.Println("GetConfig", conf)
-			// fehler ausgeben, wenn keine configs zurückgegeben wurden
-			if len(conf) == 0 {
-				log.Println("GetConfig ERROR: no configs returned")
-				return
-			}
-			log.Println("GetConfig ROIS", conf[0].Rois)
-
-			grabber.SetDocumentConfigurations(conf)
-		}
-
-		mainScreenClass.SetChannel(grabber.GetChannel())
-		grabber.SetRun(!mainScreenClass.GetPlayState())
-		mainScreenClass.SetPlayState(!mainScreenClass.GetPlayState())
+	if *arguments.DBConnection != "" {
+		postcheck.Run()
+	} else if *arguments.Camera >= 0 {
+		camera.Run()
+	} else {
+		ui.StartAndRun()
 	}
-
-	cameraContainer = mainScreenClass.CreateContainer(startStop)
-
-	mainScreenClass.SetOnLogout(func() {
-		cameraContainer.Hide()
-		loginContainer.Show()
-	})
-
-	content := container.New(
-		layout.NewStackLayout(),
-		loginContainer,
-		cameraContainer,
-	)
-	loginContainer.Show()
-	cameraContainer.Hide()
-
-	w.SetContent(content)
-
-	w.SetMaster()
-
-	w.Canvas().SetOnTypedKey(func(k *fyne.KeyEvent) {
-		log.Println(k.Name)
-		if cameraContainer.Visible() {
-			mainScreenClass.OnTypedKey(k, startStop)
-		}
-	})
-
-	w.Resize(fyne.NewSize(640, 460))
-	w.ShowAndRun()
 
 }

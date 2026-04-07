@@ -3,6 +3,7 @@ package ui
 import (
 	"image"
 	"image/color"
+	"sync"
 	"time"
 
 	"fyne.io/fyne/v2"
@@ -13,11 +14,13 @@ import (
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
 	"gocv.io/x/gocv"
-
-	// assets "io.tualo.bp/assets"
-	api "io.tualo.bp/api"
-	globals "io.tualo.bp/globals"
-	structs "io.tualo.bp/structs"
+	"tualo.de/deep-test/api"
+	"tualo.de/deep-test/args"
+	"tualo.de/deep-test/continuous"
+	"tualo.de/deep-test/cv"
+	"tualo.de/deep-test/globals"
+	"tualo.de/deep-test/layer2"
+	"tualo.de/deep-test/structs"
 
 	"bytes"
 	"io/ioutil"
@@ -32,6 +35,8 @@ import (
 	"github.com/gopxl/beep/mp3"
 	"github.com/gopxl/beep/speaker"
 )
+
+var mutex sync.Mutex
 
 type MainScreenClass struct {
 	playState         bool
@@ -56,7 +61,7 @@ type MainScreenClass struct {
 	onLogout            func()
 	onStartStopCamera   func()
 
-	channel       chan gocv.Mat
+	channel       chan cv.Mat
 	boxBarcode    chan string
 	stackBarcode  chan string
 	ballotBarcode chan string
@@ -85,13 +90,6 @@ func (t *MainScreenClass) PlayAlert1() {
 
 	var format beep.Format
 
-	// f, err := os.Open("assets/sms-alert-1-daniel_simon.mp3")
-	/*var file *os.File
-	f, err := file.Read(resourceSmsAlert1DanielsimonMp3.StaticContent)
-	if err != nil {
-		log.Fatal(err)
-	}
-	*/
 	var err error
 
 	buf := bytes.NewBuffer(resourceSmsAlert1DanielsimonMp3.StaticContent)
@@ -119,38 +117,13 @@ func (t *MainScreenClass) SetOnLogout(onLogout func()) {
 	t.onLogout = onLogout
 }
 
-func (t *MainScreenClass) SetChannel(
-	channel chan gocv.Mat,
-	boxBarcode chan string,
-	stackBarcode chan string,
-	ballotBarcode chan string,
-	escapedImage chan bool,
-	currentStateChannel chan string,
-	currentOCRChannel chan string,
-	listItemChannel chan structs.HistoryListItem,
-	detectedCodesChannel chan structs.DetectedCodes,
-	sendImageQueue chan structs.SendImageQueueItem,
-) {
-	t.channel = channel
-	t.boxBarcode = boxBarcode
-	t.stackBarcode = stackBarcode
-	t.ballotBarcode = ballotBarcode
-	t.escapedImage = escapedImage
-	t.currentStateChannel = currentStateChannel
-	t.currentOCRChannel = currentOCRChannel
-	t.listItemChannel = listItemChannel
-	t.detectedCodesChannel = detectedCodesChannel
-	t.sendImageQueue = sendImageQueue
-
-}
-
 func (t *MainScreenClass) SendQueuedItems() {
 
 	for range t.ticker.C {
 		if len(t.sendImageQueue) > 0 {
 			item, ok1 := <-t.sendImageQueue
 			if ok1 {
-				res, err := api.SendReading(
+				res, err := api.Static().SendReading(
 					item.BoxBarcode,
 					item.StackBarcode,
 					item.Barcode,
@@ -184,7 +157,7 @@ func (t *MainScreenClass) SendDetectedCodes() {
 		if len(t.detectedCodesChannel) > 0 {
 			detect, ok1 := <-t.detectedCodesChannel
 			if ok1 {
-				res, err := api.SendDetectedCodes(
+				res, err := api.Static().SendDetectedCodes(
 					detect.BoxBarcode,
 					detect.StackBarcode,
 					detect.Barcode,
@@ -201,53 +174,97 @@ func (t *MainScreenClass) SendDetectedCodes() {
 	}
 }
 
+func (t *MainScreenClass) DX() {
+	//start := time.Now()
+	imgResult, imgCount := lyr.Draw(int(t.displayImage.Size().Width), int(t.displayImage.Size().Height))
+
+	if imgCount > 0 {
+		//log.Println("LayerDraw DX", t.displayImage.Size().Height, t.displayImage.Size().Width)
+		//log.Println("LayerDraw ORIG", imgResult.Rows(), imgResult.Cols())
+
+		t.displayImage.Image = t.matToImage(imgResult.Get())
+		t.displayImage.Refresh()
+		imgResult.Close()
+	}
+	// log.Println("LayerDraw RUN", time.Since(start))
+}
+
 func (t *MainScreenClass) RedrawImage() {
 
+	// log.Println("Y")
+	isRunning := false
+
 	for range t.ticker.C {
+		//  log.Println("X", len(t.channel))
 
-		if len(t.channel) > 0 {
-			img, ok1 := <-t.channel
-			if ok1 {
-				t.displayImage.Image = t.matToImage(img)
-				t.displayImage.Refresh()
-				img.Close()
+		imgResult, imgCount := lyr.Draw(500, 500)
+		//log.Println("LayerDraw RUN", index, imgCount)
+		if imgCount > 0 {
+			t.displayImage.Image = t.matToImage(imgResult.Get())
+			t.displayImage.Refresh()
+			imgResult.Close()
+		}
+
+		if false {
+			if !isRunning && len(t.channel) > 0 {
+				isRunning = true
+				log.Println("Redraw", len(t.channel))
+				img, ok1 := <-t.channel
+				if ok1 {
+
+					log.Println("X", len(t.channel))
+					mat := img.GetPointer().Clone()
+					img.Close()
+
+					t.displayImage.Image = t.matToImage(mat)
+					t.displayImage.Refresh()
+					mat.Close()
+
+					log.Println("Y", len(t.channel))
+					img.Close()
+					log.Println("Z", len(t.channel))
+
+				}
+				isRunning = false
 			}
 		}
 
-		if len(t.boxBarcode) > 0 {
-			boxBarcode, ok2 := <-t.boxBarcode
-			if ok2 {
-				t.boxLabelWidget.SetText("Kiste: " + boxBarcode)
+		/*
+			if len(t.boxBarcode) > 0 {
+				boxBarcode, ok2 := <-t.boxBarcode
+				if ok2 {
+					t.boxLabelWidget.SetText("Kiste: " + boxBarcode)
+				}
 			}
-		}
 
-		if len(t.stackBarcode) > 0 {
-			stackBarcode, ok3 := <-t.stackBarcode
-			if ok3 {
-				t.stackLabelWidget.SetText("Stapel: " + stackBarcode)
+			if len(t.stackBarcode) > 0 {
+				stackBarcode, ok3 := <-t.stackBarcode
+				if ok3 {
+					t.stackLabelWidget.SetText("Stapel: " + stackBarcode)
+				}
 			}
-		}
 
-		if len(t.ballotBarcode) > 0 {
-			ballotBarcode, ok4 := <-t.ballotBarcode
-			if ok4 {
-				t.ballotLabelWidget.SetText("Stimmzettel: " + ballotBarcode)
+			if len(t.ballotBarcode) > 0 {
+				ballotBarcode, ok4 := <-t.ballotBarcode
+				if ok4 {
+					t.ballotLabelWidget.SetText("Stimmzettel: " + ballotBarcode)
+				}
 			}
-		}
 
-		if len(t.currentStateChannel) > 0 {
-			stateText, ok5 := <-t.currentStateChannel
-			if ok5 {
-				t.stateLabelWidget.SetText("Zustand: " + stateText)
+			if len(t.currentStateChannel) > 0 {
+				stateText, ok5 := <-t.currentStateChannel
+				if ok5 {
+					t.stateLabelWidget.SetText("Zustand: " + stateText)
+				}
 			}
-		}
 
-		if len(t.currentOCRChannel) > 0 {
-			ocrText, ok6 := <-t.currentOCRChannel
-			if ok6 {
-				t.ocrLabelWidget.SetText("OCR: " + ocrText)
+			if len(t.currentOCRChannel) > 0 {
+				ocrText, ok6 := <-t.currentOCRChannel
+				if ok6 {
+					t.ocrLabelWidget.SetText("OCR: " + ocrText)
+				}
 			}
-		}
+		*/
 
 		if len(t.listItemChannel) > 0 {
 			histItem, ok7 := <-t.listItemChannel
@@ -306,12 +323,47 @@ func (t *MainScreenClass) SetPlayState(state bool) {
 	if state {
 		t.button.SetText("Stop")
 		t.ticker = time.NewTicker(1 * time.Millisecond)
-		go t.RedrawImage()
+		// go t.LayerDraw()
+		// go t.RedrawImage()
 		go t.SendDetectedCodes()
 		go t.SendQueuedItems()
+		go t.Run()
 	} else {
 		t.ticker.Stop()
 		t.button.SetText("Start")
+	}
+}
+
+func (t *MainScreenClass) LayerDraw() {
+
+	index := 0
+	isRunning := false
+	for range t.ticker.C {
+		index++
+		log.Println("LayerDraw START", index, len(t.channel), cap(t.channel))
+		if !isRunning && len(t.channel) < cap(t.channel) {
+			isRunning = true
+			imgResult, imgCount := lyr.Draw(100, 100)
+			log.Println("LayerDraw RUN", index, imgCount)
+			if imgCount > 0 {
+
+				log.Println("LayerDraw", index, "A", imgResult)
+				//t.channel <- *imgResult
+				log.Println("LayerDraw", index, "B", imgResult)
+
+				/*
+					t.displayImage.Image = t.matToImage(imgResult.Get())
+					t.displayImage.Refresh()
+				*/
+				imgResult.Close()
+
+				log.Println("LayerDraw", index, "C")
+
+			}
+			isRunning = false
+
+		}
+
 	}
 }
 
@@ -480,12 +532,75 @@ func (t *MainScreenClass) makeLeftContainer() fyne.CanvasObject {
 	return c
 }
 
-func (t *MainScreenClass) makeOuterContainer(onStartStopCamera func()) fyne.CanvasObject {
-	t.button = widget.NewButton("Start/Stop", onStartStopCamera)
+var lyr = layer2.Static()
+
+func (t *MainScreenClass) Run() {
+
+	t.channel = make(chan cv.Mat, 1)
+
+	webcam, err := gocv.OpenVideoCapture(globals.Globals().IntCamera)
+	if err != nil {
+		fmt.Printf("Error opening video capture device: %v\n", globals.Globals().IntCamera)
+		return
+	}
+	defer webcam.Close()
+
+	origianlImg := cv.NewMat("origianlImg")
+	defer origianlImg.Close()
+
+	var inputImg gocv.Mat
+	if *args.Parser().InputImageFile != "" {
+		inputImg = gocv.IMRead(*args.Parser().InputImageFile, gocv.IMReadColor)
+		defer inputImg.Close()
+	}
+
+	//continuous.Static().ShowImageChannel = showImageChannel
+	//continuous.Static().DrawLayer = lyr
+	// isRunning := false
+
+	for t.playState {
+
+		if *args.Parser().InputImageFile == "" || inputImg.Empty() {
+			if ok := webcam.Read(origianlImg.GetPointer()); !ok {
+				fmt.Printf("Device closed: %v\n", globals.Globals().IntCamera)
+				return
+			}
+		} else {
+			mg := inputImg.Clone()
+			origianlImg.FromMat("X", &mg)
+		}
+		if origianlImg.GetPointer().Empty() {
+			continue
+		}
+
+		img := cv.NewMat("rotate")
+		gocv.Rotate(origianlImg.Get(), img.GetPointer(), gocv.Rotate90CounterClockwise)
+		// origianlImg.Close()
+
+		fmt.Printf("*********img: %v\n", img.GetPointer())
+		lyr.Set("main", img, false, "", 1, 1, 1)
+		if !continuous.Static().IsRunning() {
+			// Clone the image to avoid race condition - img.Close() is called immediately after
+			imgClone := img.Clone("ui-camera-process")
+			go continuous.Static().Process(imgClone)
+		}
+		log.Println("run", len(t.channel), cap(t.channel))
+
+		img.Close()
+
+		t.DX()
+
+	}
+}
+
+func (t *MainScreenClass) makeOuterContainer() fyne.CanvasObject {
+	t.button = widget.NewButton("Start/Stop", func() {
+		t.SetPlayState(!t.GetPlayState())
+	})
 	t.button.SetText("Start")
 
 	t.settingsScreenClass = NewSettingsScreenClass()
-	t.settingsScreenClass.SetGlobals(t.globals)
+
 	t.settingsContainer = t.settingsScreenClass.CreateContainer()
 
 	t.settingsContainer.Hide()
@@ -522,11 +637,11 @@ func (t *MainScreenClass) OnTypedKey(k *fyne.KeyEvent, onStartStopCamera func())
 
 }
 
-func (t *MainScreenClass) CreateContainer(onStartStopCamera func()) *fyne.Container {
-	t.onStartStopCamera = onStartStopCamera
+func (t *MainScreenClass) CreateContainer() *fyne.Container {
+
 	container := container.New(
 		layout.NewPaddedLayout(),
-		t.makeOuterContainer(onStartStopCamera),
+		t.makeOuterContainer(),
 	)
 
 	return container

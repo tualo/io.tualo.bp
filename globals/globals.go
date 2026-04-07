@@ -1,8 +1,7 @@
 package globals
 
 import (
-	config "io.tualo.bp/config"
-	structs "io.tualo.bp/structs"
+	config "tualo.de/deep-test/config"
 )
 
 type GlobalValuesClass struct {
@@ -30,13 +29,14 @@ type GlobalValuesClass struct {
 	GaussianBlurFindCircles          float64
 	AdaptiveThresholdBlockSize       float64
 	AdaptiveThresholdSubtractMean    float32
+	ApproxPolyDPFactor               float64
 	TesseractPrefix                  string
 	ForcedCameraWidth                int
 	ForcedCameraHeight               int
 	BarcodeScale                     int
 	TesseractScale                   int
 	ShowOpenCVWindow                 bool
-	DocumentConfigurations           structs.DocumentConfigurations
+	// DocumentConfigurations           structs.DocumentConfigurations
 
 	ShowImage                     int
 	FindContourChannelMask        int
@@ -44,124 +44,126 @@ type GlobalValuesClass struct {
 	ErodeDillateSize              int
 }
 
-func NewGlobalValuesClass() *GlobalValuesClass {
-	o := &GlobalValuesClass{}
-	// o.SetPlayState( false )
-	return o
+var gbl = &GlobalValuesClass{}
+
+func Globals() *GlobalValuesClass {
+	return gbl
 }
 
-func (this *GlobalValuesClass) SetDefaults() {
-	this.IntCamera = 1
+func (me *GlobalValuesClass) SetDefaults() {
+	me.IntCamera = 1
 
-	this.ShowImage = 0
-	this.FindContourChannelMask = 7
-	this.PaperFindContourNoiseBlurSize = 15
+	me.ShowImage = 0
+	me.FindContourChannelMask = 7
+	me.PaperFindContourNoiseBlurSize = 15
 
-	this.CaptureFrameFactor = 0.5
-	this.CaptureFPS = 3.0
+	me.CaptureFrameFactor = 0.5
+	me.CaptureFPS = 3.0
 
-	this.PaperFindContourFactor = 0.2
+	me.ApproxPolyDPFactor = 0.01
 
-	this.SumMarksAVG = 0.75
-	this.RunVideo = false
-	this.LogGrabcamera = false
-	this.ShowOutputImage = false
-	this.ShowPaperImage = true
-	this.ShowCirlceImage = false
-	this.ShowDebugList = false
-	this.InnerOverdrawDrawCircles = 3
-	this.OuterOverdrawDrawCircles = 30
-	this.MeanFindCircles = 250
-	this.DpHoughCircles = 1
-	this.MinDistHoughCircles = 50
-	this.ThresholdHoughCircles = 90
-	this.AccumulatorThresholdHoughCircles = 10
-	this.GaussianBlurFindCircles = 1.0
-	this.AdaptiveThresholdBlockSize = 9.0
-	this.AdaptiveThresholdSubtractMean = 4.0
-	this.TesseractPrefix = ""
-	this.ForcedCameraWidth = -1
-	this.ForcedCameraHeight = -1
-	this.BarcodeScale = 1
-	this.TesseractScale = 1
-	this.ErodeDillateSize = 23
-	this.ShowOpenCVWindow = false
+	me.PaperFindContourFactor = 0.2
+
+	me.SumMarksAVG = 0.75
+	me.RunVideo = false
+	me.LogGrabcamera = false
+	me.ShowOutputImage = false
+	me.ShowPaperImage = true
+	me.ShowCirlceImage = false
+	me.ShowDebugList = false
+	me.InnerOverdrawDrawCircles = 3
+	me.OuterOverdrawDrawCircles = 30
+	me.MeanFindCircles = 250
+	me.DpHoughCircles = 1
+	me.MinDistHoughCircles = 50
+	me.ThresholdHoughCircles = 90
+	me.AccumulatorThresholdHoughCircles = 10
+	me.GaussianBlurFindCircles = 1.0
+	me.AdaptiveThresholdBlockSize = 9.0
+	me.AdaptiveThresholdSubtractMean = 4.0
+	me.TesseractPrefix = ""
+	me.ForcedCameraWidth = -1
+	me.ForcedCameraHeight = -1
+	me.BarcodeScale = 1
+	me.TesseractScale = 1
+	me.ErodeDillateSize = 23
+	me.ShowOpenCVWindow = false
 }
 
-func (this *GlobalValuesClass) Load() {
+func (me *GlobalValuesClass) Load() {
 	defaults := GlobalValuesClass{}
 	defaults.SetDefaults()
-	this.SumMarksAVG = this.ConfigData.GetFloat64("settings", "sumMarksAVG", defaults.SumMarksAVG)
-	this.RunVideo = this.ConfigData.GetBool("settings", "runVideo", defaults.RunVideo)
-	this.ShowOutputImage = this.ConfigData.GetBool("settings", "showOutputImage", defaults.ShowOutputImage)
-	this.ShowPaperImage = this.ConfigData.GetBool("settings", "showPaperImage", defaults.ShowPaperImage)
-	this.ShowCirlceImage = this.ConfigData.GetBool("settings", "showCirlceImage", defaults.ShowCirlceImage)
-	this.ShowDebugList = this.ConfigData.GetBool("settings", "showDebugList", defaults.ShowDebugList)
-	this.InnerOverdrawDrawCircles = this.ConfigData.GetInt("settings", "innerOverdrawDrawCircles", defaults.InnerOverdrawDrawCircles)
-	this.OuterOverdrawDrawCircles = this.ConfigData.GetInt("settings", "outerOverdrawDrawCircles", defaults.OuterOverdrawDrawCircles)
-	this.MeanFindCircles = this.ConfigData.GetFloat64("settings", "meanFindCircles", defaults.MeanFindCircles)
-	this.DpHoughCircles = this.ConfigData.GetFloat64("settings", "dpHoughCircles", defaults.DpHoughCircles)
-	this.MinDistHoughCircles = this.ConfigData.GetFloat64("settings", "minDistHoughCircles", defaults.MinDistHoughCircles)
-	this.ThresholdHoughCircles = this.ConfigData.GetFloat64("settings", "thresholdHoughCircles", defaults.ThresholdHoughCircles)
-	this.AccumulatorThresholdHoughCircles = this.ConfigData.GetFloat64("settings", "accumulatorThresholdHoughCircles", defaults.AccumulatorThresholdHoughCircles)
-	this.GaussianBlurFindCircles = this.ConfigData.GetFloat64("settings", "gaussianBlurFindCircles", defaults.GaussianBlurFindCircles)
+	me.SumMarksAVG = me.ConfigData.GetFloat64("settings", "sumMarksAVG", defaults.SumMarksAVG)
+	me.RunVideo = me.ConfigData.GetBool("settings", "runVideo", defaults.RunVideo)
+	me.ShowOutputImage = me.ConfigData.GetBool("settings", "showOutputImage", defaults.ShowOutputImage)
+	me.ShowPaperImage = me.ConfigData.GetBool("settings", "showPaperImage", defaults.ShowPaperImage)
+	me.ShowCirlceImage = me.ConfigData.GetBool("settings", "showCirlceImage", defaults.ShowCirlceImage)
+	me.ShowDebugList = me.ConfigData.GetBool("settings", "showDebugList", defaults.ShowDebugList)
+	me.InnerOverdrawDrawCircles = me.ConfigData.GetInt("settings", "innerOverdrawDrawCircles", defaults.InnerOverdrawDrawCircles)
+	me.OuterOverdrawDrawCircles = me.ConfigData.GetInt("settings", "outerOverdrawDrawCircles", defaults.OuterOverdrawDrawCircles)
+	me.MeanFindCircles = me.ConfigData.GetFloat64("settings", "meanFindCircles", defaults.MeanFindCircles)
+	me.DpHoughCircles = me.ConfigData.GetFloat64("settings", "dpHoughCircles", defaults.DpHoughCircles)
+	me.MinDistHoughCircles = me.ConfigData.GetFloat64("settings", "minDistHoughCircles", defaults.MinDistHoughCircles)
+	me.ThresholdHoughCircles = me.ConfigData.GetFloat64("settings", "thresholdHoughCircles", defaults.ThresholdHoughCircles)
+	me.AccumulatorThresholdHoughCircles = me.ConfigData.GetFloat64("settings", "accumulatorThresholdHoughCircles", defaults.AccumulatorThresholdHoughCircles)
+	me.GaussianBlurFindCircles = me.ConfigData.GetFloat64("settings", "gaussianBlurFindCircles", defaults.GaussianBlurFindCircles)
 
-	this.AdaptiveThresholdBlockSize = this.ConfigData.GetFloat64("settings", "adaptiveThresholdBlockSize", defaults.AdaptiveThresholdBlockSize)
-	this.AdaptiveThresholdSubtractMean = this.ConfigData.GetFloat32("settings", "adaptiveThresholdSubtractMean", defaults.AdaptiveThresholdSubtractMean)
-	this.TesseractPrefix = this.ConfigData.Get("settings", "tesseractPrefix")
-	this.ForcedCameraWidth = this.ConfigData.GetInt("settings", "forcedCameraWidth", defaults.ForcedCameraWidth)
-	this.ForcedCameraHeight = this.ConfigData.GetInt("settings", "forcedCameraHeight", defaults.ForcedCameraHeight)
-	this.BarcodeScale = this.ConfigData.GetInt("settings", "barcodeScale", defaults.BarcodeScale)
-	this.TesseractScale = this.ConfigData.GetInt("settings", "tesseractScale", defaults.TesseractScale)
-	this.ShowOpenCVWindow = this.ConfigData.GetBool("settings", "showOpenCVWindow", defaults.ShowOpenCVWindow)
+	me.AdaptiveThresholdBlockSize = me.ConfigData.GetFloat64("settings", "adaptiveThresholdBlockSize", defaults.AdaptiveThresholdBlockSize)
+	me.AdaptiveThresholdSubtractMean = me.ConfigData.GetFloat32("settings", "adaptiveThresholdSubtractMean", defaults.AdaptiveThresholdSubtractMean)
+	me.TesseractPrefix = me.ConfigData.Get("settings", "tesseractPrefix")
+	me.ForcedCameraWidth = me.ConfigData.GetInt("settings", "forcedCameraWidth", defaults.ForcedCameraWidth)
+	me.ForcedCameraHeight = me.ConfigData.GetInt("settings", "forcedCameraHeight", defaults.ForcedCameraHeight)
+	me.BarcodeScale = me.ConfigData.GetInt("settings", "barcodeScale", defaults.BarcodeScale)
+	me.TesseractScale = me.ConfigData.GetInt("settings", "tesseractScale", defaults.TesseractScale)
+	me.ShowOpenCVWindow = me.ConfigData.GetBool("settings", "showOpenCVWindow", defaults.ShowOpenCVWindow)
 
-	this.IntCamera = this.ConfigData.GetInt("camera", "index", defaults.IntCamera)
-	this.CaptureFrameFactor = this.ConfigData.GetFloat64("camera", "captureFrameFactor", defaults.CaptureFrameFactor)
-	this.CaptureFPS = this.ConfigData.GetFloat64("camera", "captureFPS", defaults.CaptureFPS)
+	me.IntCamera = me.ConfigData.GetInt("camera", "index", defaults.IntCamera)
+	me.CaptureFrameFactor = me.ConfigData.GetFloat64("camera", "captureFrameFactor", defaults.CaptureFrameFactor)
+	me.CaptureFPS = me.ConfigData.GetFloat64("camera", "captureFPS", defaults.CaptureFPS)
 
-	this.PaperFindContourFactor = this.ConfigData.GetFloat64("paper", "contourFactor", defaults.PaperFindContourFactor)
+	me.PaperFindContourFactor = me.ConfigData.GetFloat64("paper", "contourFactor", defaults.PaperFindContourFactor)
 
-	this.ShowImage = this.ConfigData.GetInt("settings", "showImage", defaults.ShowImage)
-	this.FindContourChannelMask = this.ConfigData.GetInt("paper", "findContourChannelMask", defaults.FindContourChannelMask)
-	this.PaperFindContourNoiseBlurSize = this.ConfigData.GetInt("paper", "paperFindContourNoiseBlurSize", defaults.PaperFindContourNoiseBlurSize)
-	this.ErodeDillateSize = this.ConfigData.GetInt("paper", "erodeDillateSize", defaults.ErodeDillateSize)
+	me.ShowImage = me.ConfigData.GetInt("settings", "showImage", defaults.ShowImage)
+	me.FindContourChannelMask = me.ConfigData.GetInt("paper", "findContourChannelMask", defaults.FindContourChannelMask)
+	me.PaperFindContourNoiseBlurSize = me.ConfigData.GetInt("paper", "paperFindContourNoiseBlurSize", defaults.PaperFindContourNoiseBlurSize)
+	me.ErodeDillateSize = me.ConfigData.GetInt("paper", "erodeDillateSize", defaults.ErodeDillateSize)
 
 }
 
-func (this *GlobalValuesClass) Save() {
-	this.ConfigData.SetFloat64("settings", "sumMarksAVG", this.SumMarksAVG)
-	this.ConfigData.SetBool("settings", "runVideo", this.RunVideo)
-	this.ConfigData.SetBool("settings", "showOutputImage", this.ShowOutputImage)
-	this.ConfigData.SetBool("settings", "showPaperImage", this.ShowPaperImage)
-	this.ConfigData.SetBool("settings", "showCirlceImage", this.ShowCirlceImage)
-	this.ConfigData.SetBool("settings", "showDebugList", this.ShowDebugList)
-	this.ConfigData.SetInt("settings", "innerOverdrawDrawCircles", this.InnerOverdrawDrawCircles)
-	this.ConfigData.SetInt("settings", "outerOverdrawDrawCircles", this.OuterOverdrawDrawCircles)
-	this.ConfigData.SetFloat64("settings", "meanFindCircles", this.MeanFindCircles)
-	this.ConfigData.SetFloat64("settings", "dpHoughCircles", this.DpHoughCircles)
-	this.ConfigData.SetFloat64("settings", "minDistHoughCircles", this.MinDistHoughCircles)
-	this.ConfigData.SetFloat64("settings", "thresholdHoughCircles", this.ThresholdHoughCircles)
-	this.ConfigData.SetFloat64("settings", "accumulatorThresholdHoughCircles", this.AccumulatorThresholdHoughCircles)
-	this.ConfigData.SetFloat64("settings", "gaussianBlurFindCircles", this.GaussianBlurFindCircles)
-	this.ConfigData.SetFloat64("settings", "adaptiveThresholdBlockSize", this.AdaptiveThresholdBlockSize)
-	this.ConfigData.SetFloat32("settings", "adaptiveThresholdSubtractMean", this.AdaptiveThresholdSubtractMean)
-	this.ConfigData.Set("settings", "tesseractPrefix", this.TesseractPrefix)
-	this.ConfigData.SetInt("settings", "forcedCameraWidth", this.ForcedCameraWidth)
-	this.ConfigData.SetInt("settings", "forcedCameraHeight", this.ForcedCameraHeight)
-	this.ConfigData.SetInt("settings", "barcodeScale", this.BarcodeScale)
-	this.ConfigData.SetInt("settings", "tesseractScale", this.TesseractScale)
-	this.ConfigData.SetBool("settings", "showOpenCVWindow", this.ShowOpenCVWindow)
+func (me *GlobalValuesClass) Save() {
+	me.ConfigData.SetFloat64("settings", "sumMarksAVG", me.SumMarksAVG)
+	me.ConfigData.SetBool("settings", "runVideo", me.RunVideo)
+	me.ConfigData.SetBool("settings", "showOutputImage", me.ShowOutputImage)
+	me.ConfigData.SetBool("settings", "showPaperImage", me.ShowPaperImage)
+	me.ConfigData.SetBool("settings", "showCirlceImage", me.ShowCirlceImage)
+	me.ConfigData.SetBool("settings", "showDebugList", me.ShowDebugList)
+	me.ConfigData.SetInt("settings", "innerOverdrawDrawCircles", me.InnerOverdrawDrawCircles)
+	me.ConfigData.SetInt("settings", "outerOverdrawDrawCircles", me.OuterOverdrawDrawCircles)
+	me.ConfigData.SetFloat64("settings", "meanFindCircles", me.MeanFindCircles)
+	me.ConfigData.SetFloat64("settings", "dpHoughCircles", me.DpHoughCircles)
+	me.ConfigData.SetFloat64("settings", "minDistHoughCircles", me.MinDistHoughCircles)
+	me.ConfigData.SetFloat64("settings", "thresholdHoughCircles", me.ThresholdHoughCircles)
+	me.ConfigData.SetFloat64("settings", "accumulatorThresholdHoughCircles", me.AccumulatorThresholdHoughCircles)
+	me.ConfigData.SetFloat64("settings", "gaussianBlurFindCircles", me.GaussianBlurFindCircles)
+	me.ConfigData.SetFloat64("settings", "adaptiveThresholdBlockSize", me.AdaptiveThresholdBlockSize)
+	me.ConfigData.SetFloat32("settings", "adaptiveThresholdSubtractMean", me.AdaptiveThresholdSubtractMean)
+	me.ConfigData.Set("settings", "tesseractPrefix", me.TesseractPrefix)
+	me.ConfigData.SetInt("settings", "forcedCameraWidth", me.ForcedCameraWidth)
+	me.ConfigData.SetInt("settings", "forcedCameraHeight", me.ForcedCameraHeight)
+	me.ConfigData.SetInt("settings", "barcodeScale", me.BarcodeScale)
+	me.ConfigData.SetInt("settings", "tesseractScale", me.TesseractScale)
+	me.ConfigData.SetBool("settings", "showOpenCVWindow", me.ShowOpenCVWindow)
 
-	this.ConfigData.SetInt("camera", "index", this.IntCamera)
-	this.ConfigData.SetFloat64("camera", "captureFrameFactor", this.CaptureFrameFactor)
-	this.ConfigData.SetFloat64("camera", "captureFPS", this.CaptureFPS)
+	me.ConfigData.SetInt("camera", "index", me.IntCamera)
+	me.ConfigData.SetFloat64("camera", "captureFrameFactor", me.CaptureFrameFactor)
+	me.ConfigData.SetFloat64("camera", "captureFPS", me.CaptureFPS)
 
-	this.ConfigData.SetInt("settings", "showImage", this.ShowImage)
+	me.ConfigData.SetInt("settings", "showImage", me.ShowImage)
 
-	this.ConfigData.SetInt("paper", "findContourChannelMask", this.FindContourChannelMask)
-	this.ConfigData.SetInt("paper", "paperFindContourNoiseBlurSize", this.PaperFindContourNoiseBlurSize)
-	this.ConfigData.SetFloat64("paper", "contourFactor", this.PaperFindContourFactor)
-	this.ConfigData.SetInt("paper", "erodeDillateSize", this.ErodeDillateSize)
+	me.ConfigData.SetInt("paper", "findContourChannelMask", me.FindContourChannelMask)
+	me.ConfigData.SetInt("paper", "paperFindContourNoiseBlurSize", me.PaperFindContourNoiseBlurSize)
+	me.ConfigData.SetFloat64("paper", "contourFactor", me.PaperFindContourFactor)
+	me.ConfigData.SetInt("paper", "erodeDillateSize", me.ErodeDillateSize)
 
-	this.ConfigData.Save()
+	me.ConfigData.Save()
 }
